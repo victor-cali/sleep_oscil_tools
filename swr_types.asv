@@ -150,6 +150,12 @@ yourtimevector = (1:length(ripplespyr))/600;
 thresh = mean(ripplespyr) + 5*std(ripplespyr); %threshold for ripple detection
 [S, E, M] = findRipplesLisa(ripplespyr', yourtimevector, thresh, (thresh)*(1/2), 600 ); %Adrian's detection
 
+
+M_dur = NaT(1, length(M)) - NaT(1);   % Not really important
+for kk=1:length(M)
+    M_dur(kk) = duration([0 0 M(kk)]);
+end
+
 % We have the start/end time of each ripple, we create one long logical
 % vector where 1's are our ripples
 ripple_hpc203 = zeros(1,L);
