@@ -109,17 +109,19 @@ spw = double(filtbpl <= mean(filtbpl)-5*std(filtbpl));
 % Use absolute derivative for practical purposes: every sharp wave will hence start and end with a 1
 dspw = abs(diff(spw)); 
 % Get array of indices for starts and ends of sharp-waves
-sw_lims = find(dspw);
+sw_event_marks = find(dspw);
 % Get pairs of indices for starts and ends of sharp-waves
-startsends_sw = [sw_lims(1:2:end), sw_lims(2:2:end)];
+sw_event_lims = [sw_event_marks(1:2:end), sw_event_marks(2:2:end)];
 % Get sharp-waves peaks
-peaks = [];
-for i = 1 : length(startsends_sw)
-    sw_lim = startsends_sw(i,:);
+sw_num = length(sw_event_marks)/2;
+peaks = zeros(sw_num,1);
+for i = 1 : sw_num
+    sw_lim = sw_event_lims(i,:);
     [~,I] = min(HPC203(sw_lim(1):sw_lim(2),3));
-    peak = sw_lim(1) + I -1;
-    peaks = [peaks peak];
+    peaks(i) = sw_lim(1) + I -1;
 end
+% Get sharp-wave indexes for start, peak, end (spe)
+sw_spe = [sw_event_lims(:,1) peaks sw_event_lims(:,2)];
 
 % Detect sharp waves in the HPC layer below pyramidal layer (BPL)
 
