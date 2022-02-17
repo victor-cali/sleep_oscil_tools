@@ -99,34 +99,48 @@ title('PFC - deep layer')
 linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
 %% Sharp wave ripples detection
-% For the detection of SW (sharp waves) we use the BPL (Below Pyramidal
-% Layer) of the HPC
+% For the detection of SW (sharp waves) we use the BPL (Below Pyramidal Layer) of the HPC
+
 %Band pass filter to better see the sharp waves
 [c,d] = butter(3, [1/300 20/300]);
 filtbpl = filtfilt(c,d,HPC203(:,3));
-spw = double(filtbpl <= mean(filtbpl)-5*std(filtbpl)); % Detect sharp waves as signal lower than ?-5*SD
-dspw = abs(diff(spw)); % Use absolute derivative for practical purposes: every sharp wave will hence start with a 1 and end with a 1
+% Detect sharp waves as signal lower than ?-5*SD
+spw = double(filtbpl <= mean(filtbpl)-5*std(filtbpl));
+% Use absolute derivative for practical purposes: every sharp wave will hence start and end with a 1
+dspw = abs(diff(spw)); 
+% Get array of indices for starts and ends of sharp-waves
+sw_lims = find(dspw);
+% Get pairs of indices for starts and ends of sharp-waves
+startsends_sw = [sw_lims(1:2:end), sw_lims(2:2:end)];
+% Get sharp-waves peaks
+peaks = [];
+for i = 1 : length(startsends_sw)
+    sw_lim = startsends_sw(i,:);
+    [~,I] = min(HPC203(sw_lim(1):sw_lim(2),3));
+    peak = sw_lim(1) + I -1;
+    peaks = [peaks peak];
+end
 
 % Detect sharp waves in the HPC layer below pyramidal layer (BPL)
 
 %Get the local peak of each sharp wave 
-spwpeak = nan(L,1);
-index = 1;
-while index < L
-    if dspw(index) == 1
-        index2 = index;
-        index = index+1;
-        while dspw(index) == 0
-            index = index + 1;
-        end
-        locmin = min(HPC203((index2+1):(index+1),3));
-        indmin = find(HPC203(:,3) == locmin);
-        spwpeak(indmin) = locmin;
-        index = index+1;
-    else
-        index = index+1;
-    end
-end
+%spwpeak = nan(L,1);
+%index = 1;
+%while index < L
+%    if dspw(index) == 1
+%        index2 = index;
+%        index = index+1;
+%        while dspw(index) == 0
+%            index = index + 1;
+%        end
+%        locmin = min(HPC203((index2+1):(index+1),3));
+%        indmin = find(HPC203(:,3) == locmin);
+%        spwpeak(indmin) = locmin;
+%        index = index+1;
+%    else
+%        index = index+1;
+%    end
+%end
 
 % Sharp Waves characterization
 N_SW = sum(spwpeak); %Number of SW
