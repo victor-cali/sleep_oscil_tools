@@ -98,7 +98,7 @@ title('PFC - deep layer')
 
 linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
-%% Sharp wave ripples detection
+%% Sharp waves detection
 % For the detection of SW (sharp waves) we use the BPL (Below Pyramidal Layer) of the HPC
 
 %Band pass filter to better see the sharp waves
@@ -145,17 +145,18 @@ sw_spe = [sw_event_lims(:,1) peaks sw_event_lims(:,2)];
 %end
 
 % Sharp Waves characterization
-N_SW = sum(spwpeak); %Number of SW
-sw_epoch = ~isnan(spwpeak);
-sw_epoch = reshape(sw_epoch(1:floor(L/(60*600))*60*600), 60*600,floor(L/(60*600))); %separate in 1min bins
-sw_fhz = sum(sw_epoch); %Nb of SW per second for each 1min bin
-figure
-plot(linspace(duration(0,0,0,0, 'Format', 'hh:mm:ss.SSS'),duration(0, 0, L/600, 0, 'Format', 'hh:mm:ss.SSS'),length(sw_fhz)), sw_fhz)
-title('Sharp Wave rate (/sec) per 1 min bin')
+%N_SW = sum(spwpeak); %Number of SW
+%sw_epoch = ~isnan(spwpeak);
+%sw_epoch = reshape(sw_epoch(1:floor(L/(60*600))*60*600), 60*600,floor(L/(60*600))); %separate in 1min bins
+%sw_fhz = sum(sw_epoch); %Nb of SW per second for each 1min bin
+%figure
+%plot(linspace(duration(0,0,0,0, 'Format', 'hh:mm:ss.SSS'),duration(0, 0, L/600, 0, 'Format', 'hh:mm:ss.SSS'),length(sw_fhz)), sw_fhz)
+%title('Sharp Wave rate (/sec) per 1 min bin')
 % What we observe: bursts in SW activity for every NREM episode, with an
 % apparent decrease as the bout lasts
 
-%Ripple detection 
+
+%% Ripples detection
 %For ripple detection, we use the pyramidal layer of the HPC
 %First we bandpass for ripple frequency range
 [e,f] = butter(3, [90/300 200/300]);
@@ -165,7 +166,23 @@ yourtimevector = (1:length(ripplespyr))/600;
 
 thresh = mean(ripplespyr) + 5*std(ripplespyr); %threshold for ripple detection
 [S, E, M] = findRipplesLisa(ripplespyr', yourtimevector, thresh, (thresh)*(1/2), 600 ); %Adrian's detection
+r_spe = [S', M', E'];
+r_num = length(M);
 
+%% Table creation
+
+sw_mark = ones(sw_num,1);
+r_mark = ones(r_num,1)+1;
+
+Type = cat(1,sw_mark,r_mark);
+
+Start = cat(1, sw_spe(:,1), r_spe(:,1));
+Peak = cat(1, sw_spe(:,2), r_spe(:,2));
+End = cat(1, sw_spe(:,3), r_spe(:,3));
+
+oscilations_table = table(Type, Start, Peak, End)
+
+%%
 % We have the start/end time of each ripple, we create one long logical
 % vector where 1's are our ripples
 ripple_hpc203 = zeros(1,L);
