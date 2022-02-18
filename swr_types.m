@@ -174,17 +174,17 @@ sw_mark = ones(sw_num,1);
 r_mark = ones(r_num,1)+1;
 % Columns of the table
 Type = cat(1,sw_mark,r_mark);
-%Peak with respect to raw signal
-Peak = cat(1, sw_spe(:,2), r_spe(:,2));
-% Five Second window with respect to raw signal
-Five_Start = Peak - 1500;
-Five_End = Peak + 1500;
 % Start with respect to the 5 second window
 Start = cat(1, sw_spe(:,1), r_spe(:,1));
-Start = Start - Five_Start;
+%Peak with respect to raw signal
+Peak = cat(1, sw_spe(:,2), r_spe(:,2));
 % End with respect to the 5 second window
 End = cat(1, sw_spe(:,3), r_spe(:,3));
-End = Five_End - End;
+% Five Second window with respect to raw signal
+Five_Start = Peak - 1500;
+Five_Start = Start - Five_Start;
+Five_End = Peak + 1500;
+Five_End = 3001 - (Five_End - End);
 % Table
 oscilations_table = table(Type, Start, Peak, End, Five_Start, Five_End);
 % Sort by the peak of the events
@@ -192,13 +192,16 @@ oscilations_table = sortrows(oscilations_table, 3)
 
 %% Waveforms 
 
-wave_forms = zeros(fn*5, height(oscilations_table));
-
-for i = 1:height(oscilations_table)
-    windows = oscilations_table{:,5:6};
-    
+space = zeros(fn*5+1, height(oscilations_table));
+wave_forms = struct('HPCabov', space, 'HPCpyra', space, 'HPCbelo', space, 'PFCshal', space, 'PFCdeep', space);
+for i = 1: length(fieldnames(wave_forms))
+    windows = oscilations_table{i,3};
+    wave_forms.HPCpyra(:,i) = HPC203(windows-1500 : windows+1500, 1);
+    wave_forms.HPCabov(:,i) = HPC203(windows-1500 : windows+1500, 2);
+    wave_forms.HPCbelo(:,i) = HPC203(windows-1500 : windows+1500, 3);
+    wave_forms.PFCshal(:,i) = PFC203(windows-1500 : windows+1500, 1);
+    wave_forms.PFCdeep(:,i) = PFC203(windows-1500 : windows+1500, 2);
 end
-
 
 %%
 % We have the start/end time of each ripple, we create one long logical
