@@ -33,7 +33,7 @@ patIDpfc2032 = 'D:\Dev\MATLAB\GenzelLab\data\PFC_all_animals\PFC_203_CH19.contin
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
-ds_fhz = 600;   %downsampling freq
+fn = 600;   %downsampling freq
 
 % Design of low pass filter (we low pass to 300Hz)
 %Wn = [ds_fhz/acq_fhz ]; % Cutoff=fs_new/2 Hz. 
@@ -56,8 +56,8 @@ TOT = abs(HPC203(:,2)) + abs(HPC203(:,1)) + abs(HPC203(:,3)) + abs(PFC203(:,1))+
 
 L = length(HPC203(:,1));
 
-figure
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), TOT)
+%figure
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), TOT)
 
 % Artifacts
 tr = 5670; %Visual threshold 
@@ -78,25 +78,25 @@ HPC203(outliers,:) = mean(median(HPC203));
 PFC203(outliers,:) = mean(median(PFC203));
 
 % Display all prefiltered signals
-figure
-tiledlayout(5,1)
-tt1 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2))
-title('HPC - above pyramidal layer')
-tt2 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1))
-title('HPC - pyramidal layer')
-tt3 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3))
-title('HPC - below pyramidal layer')
-tt4 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1))
-title('PFC - shallow layer')
-tt5 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
-title('PFC - deep layer')
+%figure
+%tiledlayout(5,1)
+%tt1 = nexttile;
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2))
+%title('HPC - above pyramidal layer')
+%tt2 = nexttile;
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1))
+%title('HPC - pyramidal layer')
+%tt3 = nexttile;
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3))
+%title('HPC - below pyramidal layer')
+%tt4 = nexttile;
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1))
+%title('PFC - shallow layer')
+%tt5 = nexttile;
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
+%title('PFC - deep layer')
 
-linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
+%linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
 %% Sharp waves detection
 % For the detection of SW (sharp waves) we use the BPL (Below Pyramidal Layer) of the HPC
@@ -166,21 +166,39 @@ yourtimevector = (1:length(ripplespyr))/600;
 
 thresh = mean(ripplespyr) + 5*std(ripplespyr); %threshold for ripple detection
 [S, E, M] = findRipplesLisa(ripplespyr', yourtimevector, thresh, (thresh)*(1/2), 600 ); %Adrian's detection
-r_spe = [S', M', E'];
+r_spe = [S'*fn, M'*fn, E'*fn];
 r_num = length(M);
 
 %% Table creation
-
 sw_mark = ones(sw_num,1);
 r_mark = ones(r_num,1)+1;
-
+% Columns of the table
 Type = cat(1,sw_mark,r_mark);
-
-Start = cat(1, sw_spe(:,1), r_spe(:,1));
+%Peak with respect to raw signal
 Peak = cat(1, sw_spe(:,2), r_spe(:,2));
+% Five Second window with respect to raw signal
+Five_Start = Peak - 1500;
+Five_End = Peak + 1500;
+% Start with respect to the 5 second window
+Start = cat(1, sw_spe(:,1), r_spe(:,1));
+Start = Start - Five_Start;
+% End with respect to the 5 second window
 End = cat(1, sw_spe(:,3), r_spe(:,3));
+End = Five_End - End;
+% Table
+oscilations_table = table(Type, Start, Peak, End, Five_Start, Five_End);
+% Sort by the peak of the events
+oscilations_table = sortrows(oscilations_table, 3)
 
-oscilations_table = table(Type, Start, Peak, End)
+%% Waveforms 
+
+wave_forms = zeros(fn*5, height(oscilations_table));
+
+for i = 1:height(oscilations_table)
+    windows = oscilations_table{:,5:6};
+    
+end
+
 
 %%
 % We have the start/end time of each ripple, we create one long logical
