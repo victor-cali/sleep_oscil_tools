@@ -181,26 +181,27 @@ Peak = cat(1, sw_spe(:,2), r_spe(:,2));
 % End with respect to the 5 second window
 End = cat(1, sw_spe(:,3), r_spe(:,3));
 % Five Second window with respect to raw signal
-Five_Start = Peak - 1500;
-Five_Start = Start - Five_Start;
-Five_End = Peak + 1500;
-Five_End = 3001 - (Five_End - End);
+Six_Start = Peak - 1800;
+Six_Start = Start - Six_Start;
+Six_End = Peak + 1800;
+Six_End = 3601 - (Six_End - End);
 % Table
-oscilations_table = table(Type, Start, Peak, End, Five_Start, Five_End);
+oscilations_table = table(Type, Start, Peak, End, Six_Start, Six_End);
 % Sort by the peak of the events
 oscilations_table = sortrows(oscilations_table, 3)
 
 %% Waveforms 
 
-space = zeros(fn*5+1, height(oscilations_table));
+space = zeros(fn*6+1, height(oscilations_table));
 wave_forms = struct('HPCabov', space, 'HPCpyra', space, 'HPCbelo', space, 'PFCshal', space, 'PFCdeep', space);
-for i = 1: length(fieldnames(wave_forms))
-    windows = oscilations_table{i,3};
-    wave_forms.HPCpyra(:,i) = HPC203(windows-1500 : windows+1500, 1);
-    wave_forms.HPCabov(:,i) = HPC203(windows-1500 : windows+1500, 2);
-    wave_forms.HPCbelo(:,i) = HPC203(windows-1500 : windows+1500, 3);
-    wave_forms.PFCshal(:,i) = PFC203(windows-1500 : windows+1500, 1);
-    wave_forms.PFCdeep(:,i) = PFC203(windows-1500 : windows+1500, 2);
+for i = 1: height(oscilations_table)
+    peak = oscilations_table{i,3};
+    window = fix([peak-1800, peak+1800]);
+    wave_forms.HPCpyra(:,i) = HPC203(window(1) : window(2), 1);
+    wave_forms.HPCabov(:,i) = HPC203(window(1) : window(2), 2);
+    wave_forms.HPCbelo(:,i) = HPC203(window(1) : window(2), 3);
+    wave_forms.PFCshal(:,i) = PFC203(window(1) : window(2), 1);
+    wave_forms.PFCdeep(:,i) = PFC203(window(1) : window(2), 2);
 end
 
 %%
