@@ -15,13 +15,14 @@ addpath('D:\Dev\MATLAB\GenzelLab\CBD');
 %ADRITOOLS
 addpath(genpath('D:\Dev\MATLAB\GenzelLab\ADRITOOLS'))
 
-
 % Additionnal package
 addpath('D:\Dev\MATLAB\GenzelLab\analysis-tools');
 
 %Chronux
 addpath(genpath('D:\Dev\MATLAB\GenzelLab\chronux'));
 
+%GL_fast_slow_hfos
+addpath(genpath('D:\Dev\MATLAB\GenzelLab\GL_fast_slow_hfos'))
 %% Rat 203 - vehicle
 
 %Paths
@@ -189,6 +190,40 @@ Six_End = 3601 - (Six_End - End);
 oscilations_table = table(Type, Start, Peak, End, Six_Start, Six_End);
 % Sort by the peak of the events
 oscilations_table = sortrows(oscilations_table, 3)
+
+%% Co-occurrences between Ripples and Sharp-Waves
+
+% Fix event arrays indices
+r = oscilations_table(:, [1 2 4]);
+sw = oscilations_table(:, [1 2 4]);
+for i = 1:height(oscilations_table)
+    if oscilations_table.Type(i) == 1
+        r(i, 2) = {-2};
+        r(i, 3) = {-1};
+    elseif oscilations_table.Type(i) == 2
+        sw(i, 2) = {-4};
+        sw(i, 3) = {-3};
+    end
+end
+% Ripples
+a_s = r{:,2};
+a_e = r{:,3};
+% Sharp-waves
+n_s = sw{:,2};
+n_e = sw{:,3};
+% Find co-occurrences
+[co_vec1, co_vec2, count_co_vec1, count_co_vec2] = cooccurrence_vec(a_s,a_e,n_s, n_e);
+
+% Modification of the oscilations table
+for i = 1 : count_co_vec1
+    index = co_vec1(i);
+    oscilations_table(index,1) = {3};
+end
+
+for i = 1 : count_co_vec2
+    index = co_vec2(i);
+    oscilations_table(index,1) = {4};
+end
 
 %% Waveforms 
 
