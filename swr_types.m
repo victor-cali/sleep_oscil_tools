@@ -96,7 +96,6 @@ PFC203(outliers,:) = mean(median(PFC203));
 %tt5 = nexttile;
 %plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
 %title('PFC - deep layer')
-
 %linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
 %% Sharp waves detection
@@ -238,6 +237,58 @@ for i = 1: height(oscilations_table)
     wave_forms.PFCshal(:,i) = PFC203(window(1) : window(2), 1);
     wave_forms.PFCdeep(:,i) = PFC203(window(1) : window(2), 2);
 end
+
+%% Visualization of events
+
+% Sharp Waves
+sw_evs = oscilations_table(oscilations_table.Type == 1,:);
+events = sw_evs{:,3}/600;
+M_dur_sw = NaT(1, height(sw_evs)) - NaT(1);
+for kk=1:height(sw_evs)
+    M_dur_sw(kk) = duration([0 0 events(kk)]);
+end
+
+% Ripples
+r_evs = oscilations_table(oscilations_table.Type == 2,:);
+events = r_evs{:,3}/600;
+M_dur_r = NaT(1, height(r_evs)) - NaT(1);
+for kk=1:height(r_evs)
+    M_dur_r(kk) = duration([0 0 events(kk)]);
+end
+
+% SWR
+swr_evs = oscilations_table(oscilations_table.Type == 3 | 4,:);
+events = swr_evs{:,3}/600;
+M_dur_swr = NaT(1, height(swr_evs)) - NaT(1);
+for kk=1:height(swr_evs)
+    M_dur_swr(kk) = duration([0 0 events(kk)]);
+end
+
+% Display all prefiltered signals
+figure
+tiledlayout(5,1)
+tt1 = nexttile;
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2))
+hold on
+stem(M_dur_swr,600*ones(size(M_dur_swr)), 'color', 'blue')
+title('HPC - above pyramidal layer')
+tt2 = nexttile;
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1))
+hold on
+stem(M_dur_r,600*ones(size(M_dur_r)), 'color', 'red')
+title('HPC - pyramidal layer')
+tt3 = nexttile;
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3))
+hold on
+stem(M_dur_sw,600*ones(size(M_dur_sw)), 'color', 'green')
+title('HPC - below pyramidal layer')
+tt4 = nexttile;
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1))
+title('PFC - shallow layer')
+tt5 = nexttile;
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
+title('PFC - deep layer')
+linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
 %%
 % We have the start/end time of each ripple, we create one long logical
