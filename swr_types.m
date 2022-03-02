@@ -244,10 +244,12 @@ end
 sw_evs = oscilations_table(oscilations_table.Type == 1,:);
 sw_evs = (sw_evs{:,[2 4]}/600)';
 sw_pos = zeros(size(sw_evs));
-%sw_peaks = oscilations_table(oscilations_table.Type == 1,:);
-%sw_peaks = sw_peaks{:,3}/600;
+sw_peaks = oscilations_table(oscilations_table.Type == 1,:);
+sw_peaks = sw_peaks{:,3}/600;
+M_dur_sw_p = NaT(1, length(sw_peaks)) - NaT(1);
 M_dur_sw = NaT(2, length(sw_evs)) - NaT(1);
 for kk=1:length(sw_evs)
+    M_dur_sw_p(kk) = duration([0 0 sw_peaks(kk)]);
     M_dur_sw(1,kk) = duration([0 0 sw_evs(1,kk)]);
     M_dur_sw(2,kk) = duration([0 0 sw_evs(2,kk)]);
 end
@@ -256,10 +258,12 @@ end
 r_evs = oscilations_table(oscilations_table.Type == 2,:);
 r_evs = (r_evs{:,[2 4]}/600)';
 r_pos = zeros(size(r_evs))+1;
-%r_peaks = oscilations_table(oscilations_table.Type == 2,:);
-%r_peaks = r_peaks{:,3}/600;
+r_peaks = oscilations_table(oscilations_table.Type == 2,:);
+r_peaks = r_peaks{:,3}/600;
+M_dur_r_p = NaT(1, length(r_peaks)) - NaT(1);
 M_dur_r = NaT(2, length(r_evs)) - NaT(1);
 for kk=1:length(r_evs)
+    M_dur_r_p(kk) = duration([0 0 r_peaks(kk)]);
     M_dur_r(1,kk) = duration([0 0 r_evs(1,kk)]);
     M_dur_r(2,kk) = duration([0 0 r_evs(2,kk)]);
 end
@@ -268,10 +272,12 @@ end
 r_swr_evs = oscilations_table(oscilations_table.Type == 3,:);
 r_swr_evs = (r_swr_evs{:,[2 4]}/600)';
 r_swr_pos = zeros(size(r_swr_evs))+2;
-%r_swr_peaks = oscilations_table(oscilations_table.Type == 3,:);
-%r_swr_peaks = r_swr_peaks{:,3}/600;
+r_swr_peaks = oscilations_table(oscilations_table.Type == 3,:);
+r_swr_peaks = r_swr_peaks{:,3}/600;
+M_dur_r_swr_p = NaT(1, length(r_swr_peaks)) - NaT(1);
 M_dur_r_swr = NaT(2, length(r_swr_evs)) - NaT(1);
 for kk=1:length(r_swr_evs)
+    M_dur_r_swr_p(kk) = duration([0 0 r_swr_peaks(kk)]);
     M_dur_r_swr(1,kk) = duration([0 0 r_swr_evs(1,kk)]);
     M_dur_r_swr(2,kk) = duration([0 0 r_swr_evs(2,kk)]);
 end
@@ -280,10 +286,12 @@ end
 sw_swr_evs = oscilations_table(oscilations_table.Type == 4,:);
 sw_swr_evs = (sw_swr_evs{:,[2 4]}/600)';
 sw_swr_pos = zeros(size(sw_swr_evs))+3;
-%sw_swr_peaks = oscilations_table(oscilations_table.Type == 4,:);
-%sw_swr_peaks = sw_swr_peaks{:,3}/600;
+sw_swr_peaks = oscilations_table(oscilations_table.Type == 4,:);
+sw_swr_peaks = sw_swr_peaks{:,3}/600;
+M_dur_sw_swr_p = NaT(1, length(sw_swr_peaks)) - NaT(1);
 M_dur_sw_swr = NaT(2, length(sw_swr_evs)) - NaT(1);
 for kk=1:length(sw_swr_evs)
+    M_dur_sw_swr_p(kk) = duration([0 0 sw_swr_peaks(kk)]);
     M_dur_sw_swr(1, kk) = duration([0 0 sw_swr_evs(1,kk)]);
     M_dur_sw_swr(2, kk) = duration([0 0 sw_swr_evs(2,kk)]);
 end
@@ -292,63 +300,71 @@ end
 figure
 tiledlayout(5,1)
 tt1 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2))
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2), 'color', [0.3010, 0.7450, 0.9330])
 hold on
 plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
 hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
 hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
 title('HPC - above pyramidal layer')
 tt2 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1))
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1), 'color', [0.3010, 0.7450, 0.9330])
 hold on
 plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
 hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
 hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-%hold on
-%stem(M_dur_r,600*ones(size(M_dur_r)), 'color', 'red')
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+r_p = stem(M_dur_r_p,300*ones(size(M_dur_r_p)), 'color', [0, 0.5, 0]);
+set(r_p, 'Marker', 'none')
+hold on
+r_swr_p = stem(M_dur_r_swr_p,300*ones(size(M_dur_r_swr_p)), 'color', [0.4660, 0.6740, 0.1880]);
+set(r_swr_p, 'Marker', 'none')
 title('HPC - pyramidal layer')
 tt3 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3))
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3), 'color', [0.3010, 0.7450, 0.9330])
 hold on
-plot(M_dur_r_peaks, 1000*ones(size(M_dur_r_peaks)), 'color', [0, 0.5, 0], 'LineWidth', 9)
+plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
 hold on
-plot(M_dur_sw_peaks, 1500*ones(size(M_dur_sw_peaks)), 'color', [1, 0, 0], 'LineWidth', 9)
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
 hold on
-plot(M_dur_r_swr_peaks, 1000*ones(size(M_dur_r_swr_peaks)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 hold on
-plot(M_dur_sw_swr_peaks, 1500*ones(size(M_dur_sw_swr_peaks)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-%hold on
-%stem(M_dur_sw,600*ones(size(M_dur_sw)), 'color', 'green')
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+sw_p = stem(M_dur_sw_p,300*ones(size(M_dur_sw_p)), 'color', [0.6350, 0.0780, 0.1840]);
+set(sw_p, 'Marker', 'none')
+hold on
+sw_swr_p = stem(M_dur_sw_swr_p,300*ones(size(M_dur_sw_swr_p)), 'color', [1, 0, 0]);
+set(sw_swr_p, 'Marker', 'none')
 title('HPC - below pyramidal layer')
 tt4 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1))
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1), 'color', [0.3010, 0.7450, 0.9330])
 hold on
 plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
 hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
 hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
 title('PFC - shallow layer')
 tt5 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2), 'color', [0.3010, 0.7450, 0.9330])
 hold on
 plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
 hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
 hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
 title('PFC - deep layer')
 linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
