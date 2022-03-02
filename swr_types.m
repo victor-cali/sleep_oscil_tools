@@ -242,26 +242,50 @@ end
 
 % Sharp Waves
 sw_evs = oscilations_table(oscilations_table.Type == 1,:);
-events = sw_evs{:,3}/600;
-M_dur_sw = NaT(1, height(sw_evs)) - NaT(1);
-for kk=1:height(sw_evs)
-    M_dur_sw(kk) = duration([0 0 events(kk)]);
+sw_evs = (sw_evs{:,[2 4]}/600)';
+sw_pos = zeros(size(sw_evs));
+%sw_peaks = oscilations_table(oscilations_table.Type == 1,:);
+%sw_peaks = sw_peaks{:,3}/600;
+M_dur_sw = NaT(2, length(sw_evs)) - NaT(1);
+for kk=1:length(sw_evs)
+    M_dur_sw(1,kk) = duration([0 0 sw_evs(1,kk)]);
+    M_dur_sw(2,kk) = duration([0 0 sw_evs(2,kk)]);
 end
 
 % Ripples
 r_evs = oscilations_table(oscilations_table.Type == 2,:);
-events = r_evs{:,3}/600;
-M_dur_r = NaT(1, height(r_evs)) - NaT(1);
-for kk=1:height(r_evs)
-    M_dur_r(kk) = duration([0 0 events(kk)]);
+r_evs = (r_evs{:,[2 4]}/600)';
+r_pos = zeros(size(r_evs))+1;
+%r_peaks = oscilations_table(oscilations_table.Type == 2,:);
+%r_peaks = r_peaks{:,3}/600;
+M_dur_r = NaT(2, length(r_evs)) - NaT(1);
+for kk=1:length(r_evs)
+    M_dur_r(1,kk) = duration([0 0 r_evs(1,kk)]);
+    M_dur_r(2,kk) = duration([0 0 r_evs(2,kk)]);
 end
 
-% SWR
-swr_evs = oscilations_table(oscilations_table.Type == 3 | 4,:);
-events = swr_evs{:,3}/600;
-M_dur_swr = NaT(1, height(swr_evs)) - NaT(1);
-for kk=1:height(swr_evs)
-    M_dur_swr(kk) = duration([0 0 events(kk)]);
+% R_SWR
+r_swr_evs = oscilations_table(oscilations_table.Type == 3,:);
+r_swr_evs = (r_swr_evs{:,[2 4]}/600)';
+r_swr_pos = zeros(size(r_swr_evs))+2;
+%r_swr_peaks = oscilations_table(oscilations_table.Type == 3,:);
+%r_swr_peaks = r_swr_peaks{:,3}/600;
+M_dur_r_swr = NaT(2, length(r_swr_evs)) - NaT(1);
+for kk=1:length(r_swr_evs)
+    M_dur_r_swr(1,kk) = duration([0 0 r_swr_evs(1,kk)]);
+    M_dur_r_swr(2,kk) = duration([0 0 r_swr_evs(2,kk)]);
+end
+
+% SW_SWR
+sw_swr_evs = oscilations_table(oscilations_table.Type == 4,:);
+sw_swr_evs = (sw_swr_evs{:,[2 4]}/600)';
+sw_swr_pos = zeros(size(sw_swr_evs))+3;
+%sw_swr_peaks = oscilations_table(oscilations_table.Type == 4,:);
+%sw_swr_peaks = sw_swr_peaks{:,3}/600;
+M_dur_sw_swr = NaT(2, length(sw_swr_evs)) - NaT(1);
+for kk=1:length(sw_swr_evs)
+    M_dur_sw_swr(1, kk) = duration([0 0 sw_swr_evs(1,kk)]);
+    M_dur_sw_swr(2, kk) = duration([0 0 sw_swr_evs(2,kk)]);
 end
 
 % Display all prefiltered signals
@@ -270,23 +294,61 @@ tiledlayout(5,1)
 tt1 = nexttile;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2))
 hold on
-stem(M_dur_swr,600*ones(size(M_dur_swr)), 'color', 'blue')
+plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+hold on
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 title('HPC - above pyramidal layer')
 tt2 = nexttile;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1))
 hold on
-stem(M_dur_r,600*ones(size(M_dur_r)), 'color', 'red')
+plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+hold on
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
+%hold on
+%stem(M_dur_r,600*ones(size(M_dur_r)), 'color', 'red')
 title('HPC - pyramidal layer')
 tt3 = nexttile;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3))
 hold on
-stem(M_dur_sw,600*ones(size(M_dur_sw)), 'color', 'green')
+plot(M_dur_r_peaks, 1000*ones(size(M_dur_r_peaks)), 'color', [0, 0.5, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_sw_peaks, 1500*ones(size(M_dur_sw_peaks)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_r_swr_peaks, 1000*ones(size(M_dur_r_swr_peaks)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+hold on
+plot(M_dur_sw_swr_peaks, 1500*ones(size(M_dur_sw_swr_peaks)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
+%hold on
+%stem(M_dur_sw,600*ones(size(M_dur_sw)), 'color', 'green')
 title('HPC - below pyramidal layer')
 tt4 = nexttile;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1))
+hold on
+plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+hold on
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 title('PFC - shallow layer')
 tt5 = nexttile;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
+hold on
+plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [1, 0, 0], 'LineWidth', 9)
+hold on
+plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
+hold on
+plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
 title('PFC - deep layer')
 linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
 
