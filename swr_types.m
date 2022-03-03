@@ -299,74 +299,106 @@ end
 % Display all prefiltered signals
 figure
 tiledlayout(5,1)
+
 tt1 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2), 'color', [0.3010, 0.7450, 0.9330])
-hold on
-plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
-hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
-hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+sig = HPC203(:,2);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - above pyramidal layer')
+minsig = min(sig);
+maxsig = max(sig);
+ylim([minsig maxsig+1200])
+hold on
+plot(M_dur_r, (maxsig)*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 12)
+hold on
+plot(M_dur_sw, (maxsig+750)*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 12)
+hold on
+plot(M_dur_r_swr, (maxsig)*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 12)
+hold on
+plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
+
 tt2 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1), 'color', [0.3010, 0.7450, 0.9330])
-hold on
-plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
-hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
-hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+sig = HPC203(:,1);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+title('HPC - pyramidal layer')
 hold on
 r_p = stem(M_dur_r_p,300*ones(size(M_dur_r_p)), 'color', [0, 0.5, 0]);
 set(r_p, 'Marker', 'none')
 hold on
 r_swr_p = stem(M_dur_r_swr_p,300*ones(size(M_dur_r_swr_p)), 'color', [0.4660, 0.6740, 0.1880]);
 set(r_swr_p, 'Marker', 'none')
-title('HPC - pyramidal layer')
+hold on
+minsig = min(sig);
+maxsig = max(sig);
+ylim([minsig maxsig+1200])
+hold on
+plot(M_dur_r, (maxsig)*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 12)
+hold on
+plot(M_dur_sw, (maxsig+750)*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 12)
+hold on
+plot(M_dur_r_swr, (maxsig)*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 12)
+hold on
+plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
+
+
 tt3 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3), 'color', [0.3010, 0.7450, 0.9330])
-hold on
-plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
-hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
-hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+sig = HPC203(:,3);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+title('HPC - below pyramidal layer')
 hold on
 sw_p = stem(M_dur_sw_p,300*ones(size(M_dur_sw_p)), 'color', [0.6350, 0.0780, 0.1840]);
 set(sw_p, 'Marker', 'none')
 hold on
 sw_swr_p = stem(M_dur_sw_swr_p,300*ones(size(M_dur_sw_swr_p)), 'color', [1, 0, 0]);
 set(sw_swr_p, 'Marker', 'none')
-title('HPC - below pyramidal layer')
+hold on
+minsig = min(sig);
+maxsig = max(sig);
+ylim([minsig maxsig+3000])
+hold on
+plot(M_dur_r, (maxsig+200)*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 12)
+hold on
+plot(M_dur_sw, (maxsig+1850)*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 12)
+hold on
+plot(M_dur_r_swr, (maxsig+200)*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 12)
+hold on
+plot(M_dur_sw_swr, (maxsig+1850)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
+
 tt4 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1), 'color', [0.3010, 0.7450, 0.9330])
-hold on
-plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
-hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
-hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+sig = PFC203(:,1);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - shallow layer')
+hold on
+minsig = min(sig);
+maxsig = max(sig);
+ylim([minsig maxsig+1200])
+hold on
+plot(M_dur_r, (maxsig)*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 12)
+hold on
+plot(M_dur_sw, (maxsig+750)*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 12)
+hold on
+plot(M_dur_r_swr, (maxsig)*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 12)
+hold on
+plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
+
+
 tt5 = nexttile;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2), 'color', [0.3010, 0.7450, 0.9330])
-hold on
-plot(M_dur_r, 1000*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 9)
-hold on
-plot(M_dur_sw, 1500*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 9)
-hold on
-plot(M_dur_r_swr, 1000*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 9)
-hold on
-plot(M_dur_sw_swr, 1500*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 9)
+sig = PFC203(:,2);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - deep layer')
-linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
+hold on
+minsig = min(sig);
+maxsig = max(sig);
+ylim([minsig maxsig+1200])
+hold on
+plot(M_dur_r, (maxsig)*ones(size(M_dur_r)), 'color', [0, 0.5, 0], 'LineWidth', 12)
+hold on
+plot(M_dur_sw, (maxsig+750)*ones(size(M_dur_sw)), 'color', [0.6350, 0.0780, 0.1840], 'LineWidth', 12)
+hold on
+plot(M_dur_r_swr, (maxsig)*ones(size(M_dur_r_swr)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 12)
+hold on
+plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
+
+linkaxes([tt1 tt2 tt3 tt4 tt5], 'x')
 
 %%
 % We have the start/end time of each ripple, we create one long logical
