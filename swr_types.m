@@ -107,7 +107,7 @@ filtbpl = filtfilt(c,d,HPC203(:,3));
 % Detect sharp waves as signal lower than ?-5*SD
 spw = double(filtbpl <= mean(filtbpl)-5*std(filtbpl));
 % Use absolute derivative for practical purposes: every sharp wave will hence start and end with a 1
-dspw = abs(diff(spw)); 
+dspw = abs(diff(spw));
 % Get array of indices for starts and ends of sharp-waves
 sw_event_marks = find(dspw);
 % Get pairs of indices for starts and ends of sharp-waves
@@ -154,7 +154,6 @@ sw_spe = [sw_event_lims(:,1) peaks sw_event_lims(:,2)];
 %title('Sharp Wave rate (/sec) per 1 min bin')
 % What we observe: bursts in SW activity for every NREM episode, with an
 % apparent decrease as the bout lasts
-
 
 %% Ripples detection
 %For ripple detection, we use the pyramidal layer of the HPC
@@ -299,10 +298,11 @@ end
 % Display all prefiltered signals
 figure
 tiledlayout(5,1)
+increment = 2;
 
 tt1 = nexttile;
 sig = HPC203(:,2);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - above pyramidal layer')
 minsig = min(sig);
 maxsig = max(sig);
@@ -318,7 +318,7 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 tt2 = nexttile;
 sig = HPC203(:,1);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - pyramidal layer')
 hold on
 r_p = stem(M_dur_r_p,300*ones(size(M_dur_r_p)), 'color', [0, 0.5, 0]);
@@ -342,7 +342,7 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 tt3 = nexttile;
 sig = HPC203(:,3);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - below pyramidal layer')
 hold on
 sw_p = stem(M_dur_sw_p,300*ones(size(M_dur_sw_p)), 'color', [0.6350, 0.0780, 0.1840]);
@@ -365,7 +365,7 @@ plot(M_dur_sw_swr, (maxsig+1850)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], '
 
 tt4 = nexttile;
 sig = PFC203(:,1);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - shallow layer')
 hold on
 minsig = min(sig);
@@ -383,7 +383,7 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 tt5 = nexttile;
 sig = PFC203(:,2);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - deep layer')
 hold on
 minsig = min(sig);
