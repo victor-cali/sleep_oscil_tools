@@ -189,7 +189,7 @@ oscilations_table = table(Type, Start, Peak, End, Six_Start, Six_End);
 % Sort by the peak of the events
 oscilations_table = sortrows(oscilations_table, 3)
 
-%% Co-occurrences between Ripples and Sharp-Waves
+%%
 
 % Fix event arrays indices
 r = oscilations_table(:, [1 2 4]);
@@ -204,23 +204,25 @@ for i = 1:height(oscilations_table)
     end
 end
 % Ripples
-a_s = r{:,2};
-a_e = r{:,3};
+ripple = r{:,[2 3]};
 % Sharp-waves
-n_s = sw{:,2};
-n_e = sw{:,3};
-% Find co-occurrences
-[co_vec1, co_vec2, count_co_vec1, count_co_vec2] = cooccurrence_vec(a_s,a_e,n_s, n_e);
+sharpwave = sw{:,[2 3]};
 
-% Modification of the oscilations table
-for i = 1 : count_co_vec1
-    index = co_vec1(i);
-    oscilations_table(index,1) = {3};
-end
+complexes = find_overlap(ripple, sharpwave);
 
-for i = 1 : count_co_vec2
-    index = co_vec2(i);
-    oscilations_table(index,1) = {4};
+for i = 1:length(complexes)
+    complex = complexes{i};
+    if length(complex) == 1
+        for j = 1:length(complex)
+            oscilations_table(complex(j), 1) = {3};
+        end
+        oscilations_table(i, 1) = {4};
+    elseif length(complex) > 1
+        for j = 1:length(complex)
+            oscilations_table(complex(j), 1) = {5};
+        end 
+        oscilations_table(i, 1) = {6};
+    end 
 end
 
 %% Waveforms 
@@ -267,25 +269,11 @@ for kk=1:length(r_evs)
     M_dur_r(2,kk) = duration([0 0 r_evs(2,kk)]);
 end
 
-% R_SWR
-r_swr_evs = oscilations_table(oscilations_table.Type == 3,:);
-r_swr_evs = (r_swr_evs{:,[2 4]}/600)';
-r_swr_pos = zeros(size(r_swr_evs))+2;
-r_swr_peaks = oscilations_table(oscilations_table.Type == 3,:);
-r_swr_peaks = r_swr_peaks{:,3}/600;
-M_dur_r_swr_p = NaT(1, length(r_swr_peaks)) - NaT(1);
-M_dur_r_swr = NaT(2, length(r_swr_evs)) - NaT(1);
-for kk=1:length(r_swr_evs)
-    M_dur_r_swr_p(kk) = duration([0 0 r_swr_peaks(kk)]);
-    M_dur_r_swr(1,kk) = duration([0 0 r_swr_evs(1,kk)]);
-    M_dur_r_swr(2,kk) = duration([0 0 r_swr_evs(2,kk)]);
-end
-
 % SW_SWR
-sw_swr_evs = oscilations_table(oscilations_table.Type == 4,:);
+sw_swr_evs = oscilations_table(oscilations_table.Type == 3 | oscilations_table.Type == 5,:);
 sw_swr_evs = (sw_swr_evs{:,[2 4]}/600)';
 sw_swr_pos = zeros(size(sw_swr_evs))+3;
-sw_swr_peaks = oscilations_table(oscilations_table.Type == 4,:);
+sw_swr_peaks = oscilations_table(oscilations_table.Type == 3 | oscilations_table.Type == 5,:);
 sw_swr_peaks = sw_swr_peaks{:,3}/600;
 M_dur_sw_swr_p = NaT(1, length(sw_swr_peaks)) - NaT(1);
 M_dur_sw_swr = NaT(2, length(sw_swr_evs)) - NaT(1);
@@ -293,6 +281,20 @@ for kk=1:length(sw_swr_evs)
     M_dur_sw_swr_p(kk) = duration([0 0 sw_swr_peaks(kk)]);
     M_dur_sw_swr(1, kk) = duration([0 0 sw_swr_evs(1,kk)]);
     M_dur_sw_swr(2, kk) = duration([0 0 sw_swr_evs(2,kk)]);
+end
+
+% R_SWR
+r_swr_evs = oscilations_table(oscilations_table.Type == 4 | oscilations_table.Type == 6,:);
+r_swr_evs = (r_swr_evs{:,[2 4]}/600)';
+r_swr_pos = zeros(size(r_swr_evs))+2;
+r_swr_peaks = oscilations_table(oscilations_table.Type == 4 | oscilations_table.Type == 6,:);
+r_swr_peaks = r_swr_peaks{:,3}/600;
+M_dur_r_swr_p = NaT(1, length(r_swr_peaks)) - NaT(1);
+M_dur_r_swr = NaT(2, length(r_swr_evs)) - NaT(1);
+for kk=1:length(r_swr_evs)
+    M_dur_r_swr_p(kk) = duration([0 0 r_swr_peaks(kk)]);
+    M_dur_r_swr(1,kk) = duration([0 0 r_swr_evs(1,kk)]);
+    M_dur_r_swr(2,kk) = duration([0 0 r_swr_evs(2,kk)]);
 end
 
 % Display all prefiltered signals
