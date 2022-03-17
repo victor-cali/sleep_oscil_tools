@@ -205,6 +205,11 @@ oscil_table = table(Type, Start, Peak, End, Six_Start, Six_End);
 % Sort by the peak of the events
 oscil_table = sortrows(oscil_table, 3);
 
+% Find last event (las row) where detection belongs to the first 15 minutes
+% of the signal
+limit = find(oscil_table{:,3}<=15*60*fn, 1, 'last');
+oscil_table((1:limit),:) = [];
+
 %% Find overlapping events
 
 % Fix event arrays indices
@@ -467,9 +472,6 @@ sig = PFC203(:,2);
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - deep layer')
 hold on
-minsig = min(sig);
-maxsig = max(sig);
-ylim([minsig maxsig+1200])
 hold on
 plot(M_dur_r, (maxsig)*ones(size(M_dur_r)), 'color', [0.4660, 0.6740, 0.1880], 'LineWidth', 12)
 hold on
