@@ -5,7 +5,7 @@
 
 % SET THE ANIMAL NUMBER HERE
 % __________
-animal = "203";
+animal = "9";
 % ----------
 
 source_path = "D:\Dev\MATLAB\GenzelLab\";
@@ -42,11 +42,11 @@ addpath(genpath(source_path + "GL_fast_slow_hfos"))
 data_path = source_path + "data\";
 
 %Paths
-patIDhpc2031 = data_path + "HPC_all_animals\HPC_" + animal + "_CHpyr.continuous.mat"; %pyramidal layer
-patIDhpc2032 = data_path + "HPC_all_animals\HPC_" + animal + "_CHab.continuous.mat"; %above pyramidal layer
-patIDhpc2033 = data_path + "HPC_all_animals\HPC_" + animal + "_CHbel.continuous.mat"; %below pyramidal layer
-patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH7.continuous.mat"; %channel 5 in depth
-patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH19.continuous.mat"; %channel 5 from end
+patIDhpc2031 = data_path + "HPC_all_animals\HPC_" + animal + "_CHpyr.continuous.mat";   %pyramidal layer
+patIDhpc2032 = data_path + "HPC_all_animals\HPC_" + animal + "_CHab.continuous.mat";    %above pyramidal layer
+patIDhpc2033 = data_path + "HPC_all_animals\HPC_" + animal + "_CHbel.continuous.mat";   %below pyramidal layer
+patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH8.continuous.mat";     %channel 5 in depth
+patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH20.continuous.mat";    %channel 5 from end
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
@@ -57,17 +57,31 @@ fn = 600;   %downsampling freq
 %[b,a] = butter(3,Wn); %Filter coefficients for LPF.
 
 % Load, filter and store data 
-HPC203 = [];
-PFC203 = [];
-pathsHPC203 = {patIDhpc2031,patIDhpc2032,patIDhpc2033};
-for ii=1:3
-    HPC203(:,ii) = importdata(pathsHPC203{ii});
+pathsHPC203 = {patIDhpc2031, patIDhpc2032, patIDhpc2033};
+HPC203 = cell(1,length(pathsHPC203));
+for ii = 1:length(pathsHPC203)
+    HPC203{ii} = importdata(pathsHPC203{ii});
 end
+sz = min(cellfun(@length, HPC203));
+for ii = 1:length(pathsHPC203)
+    HPC203{ii} = HPC203{ii}(1:sz);
+end
+HPC203 = cell2mat(HPC203);
 
-pathsPFC203 = {patIDpfc2031,patIDpfc2032};
-for ii=1:2
-    PFC203(:,ii) = importdata(pathsPFC203{ii});
+pathsPFC203 = {patIDpfc2031, patIDpfc2032};
+PFC203 = cell(1,length(pathsPFC203));
+for ii = 1:length(pathsPFC203)
+    PFC203{ii} = importdata(pathsPFC203{ii});
 end
+sz = min(cellfun(@length, PFC203));
+for ii = 1:length(pathsPFC203)
+    PFC203{ii} = PFC203{ii}(1:sz);
+end
+PFC203 = cell2mat(PFC203);
+
+sz = min([length(HPC203) length(PFC203)]);
+HPC203 = HPC203(1:sz, :);
+PFC203 = PFC203(1:sz, :);
 
 TOT = abs(HPC203(:,2)) + abs(HPC203(:,1)) + abs(HPC203(:,3)) + abs(PFC203(:,1))+ abs(PFC203(:,2)); % Sum of amplitudes ==> To visually assess artifacts, as they will appear in every channel and add up
 
@@ -82,7 +96,10 @@ outliers = false(L,1);
 index = 1;
 while index<L
     if TOT(index)>=tr
-        outliers((index-300):index+1999) = ones(2300,1); %When we detect an artifact, remove 300 datapoints prior (build up of artifact) and 2000 datapoints after (3.5 sec)
+        if index-300 < 1; lo_lim = 1; else; lo_lim = index-300; end
+        if index+1999 > L; hi_lim = L; else; hi_lim = index+1999; end
+        sz = length(lo_lim:hi_lim);
+        outliers(lo_lim:hi_lim) = ones(sz,1); %When we detect an artifact, remove 300 datapoints prior (build up of artifact) and 2000 datapoints after (3.5 sec)
         index = index+2000;
     else
         index = index +1;
@@ -252,7 +269,17 @@ space = zeros(fn*6+1, height(oscil_table));
 wave_forms = struct('HPCabov', space, 'HPCpyra', space, 'HPCbelo', space, 'PFCshal', space, 'PFCdeep', space);
 for i = 1: height(oscil_table)
     peak = oscil_table{i,3};
-    window = fix([peak-1800, peak+1800]);
+    if peak-1800 < 1
+        lolim = 1;
+        hilim = 3600;
+    elseif peak+1800 > length(HPC203)
+        lolim = length(HPC203)-3600; 
+        hilim = length(HPC203);
+    else
+        lolim = peak-1800; 
+        hilim = peak+1800;
+    end
+    window = fix([lolim, hilim]);
     wave_forms.HPCpyra(:,i) = HPC203(window(1) : window(2), 1);
     wave_forms.HPCabov(:,i) = HPC203(window(1) : window(2), 2);
     wave_forms.HPCbelo(:,i) = HPC203(window(1) : window(2), 3);
@@ -315,7 +342,17 @@ space = zeros(fn*6+1, height(grouped_oscil_table));
 grouped_wave_forms = struct('HPCabov', space, 'HPCpyra', space, 'HPCbelo', space, 'PFCshal', space, 'PFCdeep', space);
 for i = 1: height(grouped_oscil_table)
     peak = grouped_oscil_table{i,4};
-    window = fix([peak-1800, peak+1800]);
+    if peak-1800 < 1
+        lolim = 1;
+        hilim = 3600;
+    elseif peak+1800 > length(HPC203)
+        lolim = length(HPC203)-3600; 
+        hilim = length(HPC203);
+    else
+        lolim = peak-1800; 
+        hilim = peak+1800;
+    end
+    window = fix([lolim, hilim]);
     grouped_wave_forms.HPCpyra(:,i) = HPC203(window(1) : window(2), 1);
     grouped_wave_forms.HPCabov(:,i) = HPC203(window(1) : window(2), 2);
     grouped_wave_forms.HPCbelo(:,i) = HPC203(window(1) : window(2), 3);
