@@ -2,16 +2,17 @@
 
 % Script designed to run the analysis of SWRs
 % Load various folders with relevants functions afterward
-
+clear
 % SET THE ANIMAL NUMBER HERE
 % __________
-animal = "9";
+animal = "2";
+batch = "1";
 % ----------
 
 source_path = "D:\Dev\MATLAB\GenzelLab\";
 
-results_path = source_path + "results_sleep_oscil_tools\animal" + animal + "\";
-mkdir(results_path);
+%results_path = source_path + "results_sleep_oscil_tools\animal" + animal + "\";
+%mkdir(results_path);
 
 % Sleep Oscilations Tools (self)
 addpath(source_path + "sleep_oscil_tools");
@@ -42,11 +43,12 @@ addpath(genpath(source_path + "GL_fast_slow_hfos"))
 data_path = source_path + "data\";
 
 %Paths
+sleep_states = data_path + "PCA_state_files\PCA_Scorer_batch_" + batch + "\Rat" + animal + "\states.mat";   %pyramidal layer 
 patIDhpc2031 = data_path + "HPC_all_animals\HPC_" + animal + "_CHpyr.continuous.mat";   %pyramidal layer
 patIDhpc2032 = data_path + "HPC_all_animals\HPC_" + animal + "_CHab.continuous.mat";    %above pyramidal layer
 patIDhpc2033 = data_path + "HPC_all_animals\HPC_" + animal + "_CHbel.continuous.mat";   %below pyramidal layer
-patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH8.continuous.mat";     %channel 5 in depth
-patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH20.continuous.mat";    %channel 5 from end
+patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH37.continuous.mat";     %channel 5 in depth
+patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH60.continuous.mat";    %channel 5 from end
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
@@ -57,6 +59,7 @@ fn = 600;   %downsampling freq
 %[b,a] = butter(3,Wn); %Filter coefficients for LPF.
 
 % Load, filter and store data 
+
 pathsHPC203 = {patIDhpc2031, patIDhpc2032, patIDhpc2033};
 HPC203 = cell(1,length(pathsHPC203));
 for ii = 1:length(pathsHPC203)
@@ -82,6 +85,21 @@ PFC203 = cell2mat(PFC203);
 sz = min([length(HPC203) length(PFC203)]);
 HPC203 = HPC203(1:sz, :);
 PFC203 = PFC203(1:sz, :);
+
+% Sleep states across the signal
+sleep_states = importdata(sleep_states);
+temp_states = zeros(1, length(HPC203));
+for i = 1:length(sleep_states)
+    states = repmat(sleep_states(i),1,6000);
+    pos = 6000*i-5999;
+    temp_states(pos:pos+5999) = states;
+end
+sleep_states = temp_states;
+for i = 1:length(sleep_states)
+    if sleep_states(i) == 0
+        sleep_states(i) = sleep_states(i-1);
+    end
+end
 
 TOT = abs(HPC203(:,2)) + abs(HPC203(:,1)) + abs(HPC203(:,3)) + abs(PFC203(:,1))+ abs(PFC203(:,2)); % Sum of amplitudes ==> To visually assess artifacts, as they will appear in every channel and add up
 
@@ -217,8 +235,14 @@ Six_Start = Peak - 1800;
 Six_Start = Start - Six_Start;
 Six_End = Peak + 1800;
 Six_End = 3601 - (Six_End - End);
+% Sleep States
+Sleep_State = zeros(length(Peak),1);
+for i = 1:length(Peak) 
+    j = int32(Peak(i));
+    Sleep_State(i) = sleep_states(j);
+end
 % Table
-oscil_table = table(Type, Start, Peak, End, Six_Start, Six_End);
+oscil_table = table(Type, Start, Peak, End, Six_Start, Six_End, Sleep_State);
 % Sort by the peak of the events
 oscil_table = sortrows(oscil_table, 3);
 
@@ -329,7 +353,13 @@ End = End(indexes)';
 Six_Start = Six_Start(indexes)';
 Six_End = Six_End(indexes)';
 
-simples_complexes = table(Type, Form, Start, Peak, End, Six_Start, Six_End);
+Sleep_State = zeros(length(Peak),1);
+for i = 1:length(Peak) 
+    j = int32(Peak(i));
+    Sleep_State(i) = sleep_states(j);
+end
+
+simples_complexes = table(Type, Form, Start, Peak, End, Six_Start, Six_End, Sleep_State);
 
 % Complex table
 grouped_oscil_table = [singles; simples_complexes];
@@ -421,11 +451,11 @@ end
 % Display all prefiltered signals
 figure
 tiledlayout(5,1)
-increment = 2;
+increment = 3;
 
 tt1 = nexttile;
-sig = HPC203(:,2);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
+sig = increment.*HPC203(:,2);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - above pyramidal layer')
 minsig = min(sig);
 maxsig = max(sig);
@@ -440,14 +470,14 @@ hold on
 plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
 
 tt2 = nexttile;
-sig = HPC203(:,1);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
+sig = increment.*HPC203(:,1);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - pyramidal layer')
 hold on
-r_p = stem(M_dur_r_p,300*ones(size(M_dur_r_p)), 'color', [0.4660, 0.6740, 0.1880]);
+r_p = stem(M_dur_r_p,500*ones(size(M_dur_r_p)), 'color', [0.4660, 0.6740, 0.1880]);
 set(r_p, 'Marker', 'none')
 hold on
-r_swr_p = stem(M_dur_r_swr_p,300*ones(size(M_dur_r_swr_p)), 'color', [0.4660, 0.6740, 0.1880]);
+r_swr_p = stem(M_dur_r_swr_p,500*ones(size(M_dur_r_swr_p)), 'color', [0.4660, 0.6740, 0.1880]);
 set(r_swr_p, 'Marker', 'none')
 hold on
 minsig = min(sig);
@@ -464,8 +494,8 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 
 tt3 = nexttile;
-sig = HPC203(:,3);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
+sig = increment.*HPC203(:,3);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - below pyramidal layer')
 hold on
 sw_p = stem(M_dur_sw_p,300*ones(size(M_dur_sw_p)), 'color', [1, 0, 0]);
@@ -487,8 +517,8 @@ hold on
 plot(M_dur_sw_swr, (maxsig+1850)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
 
 tt4 = nexttile;
-sig = PFC203(:,1);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
+sig = increment.*PFC203(:,1);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - shallow layer')
 hold on
 minsig = min(sig);
@@ -505,8 +535,8 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 
 tt5 = nexttile;
-sig = PFC203(:,2);
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), increment.*sig, 'color', [0.3010, 0.7450, 0.9330])
+sig = increment.*PFC203(:,2);
+plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - deep layer')
 hold on
 hold on
@@ -520,12 +550,12 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 linkaxes([tt1 tt2 tt3 tt4 tt5], 'x')
 
-visualization_path = fullfile(results_path, "visualization" + animal + ".fig");
-savefig(visualization_path);
+%visualization_path = fullfile(results_path, "visualization" + animal + ".fig");
+%savefig(visualization_path);
 
 %% Save everything
-dataset_path = fullfile(results_path,"dataset" + animal + ".mat");
-save(dataset_path, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
+%dataset_path = fullfile(results_path,"dataset" + animal + ".mat");
+%save(dataset_path, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
 
 %%
 % We have the start/end time of each ripple, we create one long logical
