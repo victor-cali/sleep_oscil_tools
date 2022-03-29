@@ -554,7 +554,7 @@ linkaxes([tt1 tt2 tt3 tt4 tt5], 'x')
 %savefig(visualization_path);
 
 %% Save everything
-%dataset_path = fullfile(results_path,"dataset" + animal + ".mat");
+dataset_path = fullfile(results_path,"dataset" + animal + ".mat");
 %save(dataset_path, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
 
 %%
