@@ -5,13 +5,13 @@
 clear
 % SET THE ANIMAL NUMBER HERE
 % __________
-animal = "2";
+animal = "10";
 batch = "1";
 % ----------
 
 source_path = "D:\Dev\MATLAB\GenzelLab\";
 
-%results_path = source_path + "results_sleep_oscil_tools\animal" + animal + "\";
+results_path = source_path + "results_sleep_oscil_tools\";
 %mkdir(results_path);
 
 % Sleep Oscilations Tools (self)
@@ -43,12 +43,12 @@ addpath(genpath(source_path + "GL_fast_slow_hfos"))
 data_path = source_path + "data\";
 
 %Paths
-sleep_states = data_path + "PCA_state_files\PCA_Scorer_batch_" + batch + "\Rat" + animal + "\states.mat";   %pyramidal layer 
+patSleepStates = data_path + "PCA_state_files\PCA_Scorer_batch_" + batch + "\Rat" + animal + "\states.mat";   %pyramidal layer 
 patIDhpc2031 = data_path + "HPC_all_animals\HPC_" + animal + "_CHpyr.continuous.mat";   %pyramidal layer
 patIDhpc2032 = data_path + "HPC_all_animals\HPC_" + animal + "_CHab.continuous.mat";    %above pyramidal layer
 patIDhpc2033 = data_path + "HPC_all_animals\HPC_" + animal + "_CHbel.continuous.mat";   %below pyramidal layer
-patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH37.continuous.mat";     %channel 5 in depth
-patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH60.continuous.mat";    %channel 5 from end
+patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH8.continuous.mat";     %channel 5 in depth
+patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH20.continuous.mat";    %channel 5 from end
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
@@ -57,6 +57,15 @@ fn = 600;   %downsampling freq
 % Design of low pass filter (we low pass to 300Hz)
 %Wn = [ds_fhz/acq_fhz ]; % Cutoff=fs_new/2 Hz. 
 %[b,a] = butter(3,Wn); %Filter coefficients for LPF.
+
+% Sleep states across the signal
+clusters = importdata(patSleepStates);
+sleep_states = zeros(1, length(clusters)*fn*10);
+for i = 1:length(clusters)
+    state = repmat(clusters(i),1,6000);
+    pos = 6000*i-5999;
+    sleep_states(pos:pos+5999) = state;
+end
 
 % Load, filter and store data 
 
@@ -70,6 +79,7 @@ for ii = 1:length(pathsHPC203)
     HPC203{ii} = HPC203{ii}(1:sz);
 end
 HPC203 = cell2mat(HPC203);
+HPC203 = HPC203(1:length(sleep_states),:);
 
 pathsPFC203 = {patIDpfc2031, patIDpfc2032};
 PFC203 = cell(1,length(pathsPFC203));
@@ -81,25 +91,7 @@ for ii = 1:length(pathsPFC203)
     PFC203{ii} = PFC203{ii}(1:sz);
 end
 PFC203 = cell2mat(PFC203);
-
-sz = min([length(HPC203) length(PFC203)]);
-HPC203 = HPC203(1:sz, :);
-PFC203 = PFC203(1:sz, :);
-
-% Sleep states across the signal
-sleep_states = importdata(sleep_states);
-temp_states = zeros(1, length(HPC203));
-for i = 1:length(sleep_states)
-    states = repmat(sleep_states(i),1,6000);
-    pos = 6000*i-5999;
-    temp_states(pos:pos+5999) = states;
-end
-sleep_states = temp_states;
-for i = 1:length(sleep_states)
-    if sleep_states(i) == 0
-        sleep_states(i) = sleep_states(i-1);
-    end
-end
+PFC203 = PFC203(1:length(sleep_states),:);
 
 TOT = abs(HPC203(:,2)) + abs(HPC203(:,1)) + abs(HPC203(:,3)) + abs(PFC203(:,1))+ abs(PFC203(:,2)); % Sum of amplitudes ==> To visually assess artifacts, as they will appear in every channel and add up
 
@@ -248,8 +240,8 @@ oscil_table = sortrows(oscil_table, 3);
 
 % Find last event (las row) where detection belongs to the first 15 minutes
 % of the signal
-limit = find(oscil_table{:,3}<=15*60*fn, 1, 'last');
-oscil_table((1:limit),:) = [];
+start_limit = find(oscil_table{:,3}<=15*60*fn, 1, 'last');
+oscil_table((1:start_limit),:) = [];
 
 %% Find overlapping events
 
