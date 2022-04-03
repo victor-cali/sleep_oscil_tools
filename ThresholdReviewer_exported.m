@@ -2,75 +2,93 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        UIFigure                      matlab.ui.Figure
-        GridLayout                    matlab.ui.container.GridLayout
-        Panel                         matlab.ui.container.Panel
-        GridLayout2                   matlab.ui.container.GridLayout
-        GridLayout4                   matlab.ui.container.GridLayout
-        SaveTruePositiveEventsButton  matlab.ui.control.Button
-        GridLayout6                   matlab.ui.container.GridLayout
-        GridLayout8                   matlab.ui.container.GridLayout
-        SharpwaveCheckBox             matlab.ui.control.CheckBox
-        TruePositiveSharpWaveLabel    matlab.ui.control.Label
-        GridLayout5                   matlab.ui.container.GridLayout
-        GridLayout7                   matlab.ui.container.GridLayout
-        RippleCheckBox                matlab.ui.control.CheckBox
-        TruePositiveRippleLabel       matlab.ui.control.Label
-        GridLayout3                   matlab.ui.container.GridLayout
-        EventsSlider                  matlab.ui.control.Slider
-        NextButton                    matlab.ui.control.Button
-        LastButton                    matlab.ui.control.Button
-        UIAxes                        matlab.ui.control.UIAxes
+        UIFigure           matlab.ui.Figure
+        Panel              matlab.ui.container.Panel
+        GridLayout2        matlab.ui.container.GridLayout
+        GridLayout4        matlab.ui.container.GridLayout
+        SaveButton         matlab.ui.control.Button
+        RippleCheckBox     matlab.ui.control.CheckBox
+        SharpwaveCheckBox  matlab.ui.control.CheckBox
+        GridLayout8        matlab.ui.container.GridLayout
+        RThresholdLabel    matlab.ui.control.Label
+        RSpinner           matlab.ui.control.Spinner
+        GridLayout7        matlab.ui.container.GridLayout
+        SWThresholdLabel   matlab.ui.control.Label
+        SWSpinner          matlab.ui.control.Spinner
+        GridLayout         matlab.ui.container.GridLayout
+        GridLayout3        matlab.ui.container.GridLayout
+        EventsSlider       matlab.ui.control.Slider
+        NextButton         matlab.ui.control.Button
+        LastButton         matlab.ui.control.Button
+        UIAxes             matlab.ui.control.UIAxes
     end
 
     
     properties (Access = private)
+        x;
+        bel;
+        pyr;
+        len;
+        animal;
+        filt_bel;
+        filt_pyr;
         fn = 600;
-        waveforms;
-        oscil_table;
-        dataset_path;
-        events_number;
-        window_length = 3601;
+        detections;
+        window = 3601;
+        detections_num;
         true_positive_ripples = [];
         true_positive_sharpwaves = [];
     end
     
     methods (Access = private)
         function update(app)
-            event_num = app.EventsSlider.Value;
+            half_wind = fix(app.window/2);
+            % Get event number
+            det_num = app.EventsSlider.Value;
+            % start
+            det_s = (app.detections.Peak(det_num) - half_wind);
+            % end
+            det_e = (app.detections.Peak(det_num) + half_wind);
             
-            if ismember(event_num, app.true_positive_ripples)
+            % Update saved or unsaved state
+            if ismember(det_num, app.true_positive_ripples)
                 app.RippleCheckBox.Value = 1;
             else
                 app.RippleCheckBox.Value = 0;
             end
-            if ismember(event_num, app.true_positive_sharpwaves)
+            if ismember(det_num, app.true_positive_sharpwaves)
                 app.SharpwaveCheckBox.Value = 1;
             else
                 app.SharpwaveCheckBox.Value = 0;
             end
             
-            x = (1:app.window_length)./app.fn;
+            bel_sig = app.bel;
+            space = max(bel_sig(det_s:det_e)) - min(bel_sig(det_s:det_e));
+            pyr_sig = app.pyr + space;
+            space = max(pyr_sig(det_s:det_e)) - min(bel_sig(det_s:det_e));
+            filt_bel_sig = app.filt_bel + space;
+            space = max(filt_bel_sig(det_s:det_e)) - min(bel_sig(det_s:det_e));
+            filt_pyr_sig = 5.*app.filt_pyr + space; 
             
-            belo = app.waveforms.HPCbelo;
-            belo_sig = belo(:,event_num);
-            belo_width = max(belo_sig) - min(belo_sig);
-            
-            pyra = app.waveforms.HPCpyra;
-            pyra_sig = pyra(:,event_num);
-            pyra_sig = pyra_sig + belo_width;
-            
-            title(app.UIAxes, strcat("Event ", int2str(event_num)))
+            y_max = max(filt_pyr_sig(det_s:det_e)) + 250;
+            y_min = min(bel_sig(det_s:det_e)) - 250;
+
+            title(app.UIAxes, strcat("Event ", int2str(det_num)))
             cla(app.UIAxes)
-            plot(app.UIAxes, x, belo_sig, 'Color', 'black')
+            plot(app.UIAxes, app.x, filt_pyr_sig, 'Color', 'blue')
             hold(app.UIAxes,'on')
-            plot(app.UIAxes, x, pyra_sig, 'Color', 'blue')
+            plot(app.UIAxes, app.x, filt_bel_sig, 'Color', 'black')
+            hold(app.UIAxes,'on')
+            plot(app.UIAxes, app.x, pyr_sig, 'Color', 'blue')
+            hold(app.UIAxes,'on')
+            plot(app.UIAxes, app.x, bel_sig, 'Color', 'black')
             
-            app.UIAxes.YLim = [min(belo_sig)-500, max(pyra_sig)+500];
-            app.UIAxes.XLim = [0, app.window_length/app.fn];
+            app.UIAxes.YLim = [y_min y_max];
+            app.UIAxes.XLim = [det_s/app.fn, det_e/app.fn];
+            
             hold(app.UIAxes,'on')
-            txt = app.oscil_table.Type(event_num);
-            text(app.UIAxes, app.window_length/app.fn-0.5, max(pyra_sig)+250, txt)
+            txt = app.detections.Type(det_num);
+            text(app.UIAxes, det_e-1, y_max+250, txt)
 
         end
     end
@@ -81,38 +99,60 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
 
         % Code that executes after component creation
         function startupFcn(app)
-            %D:\Dev\MATLAB\results_sleep_oscil_tools_batch2.1\dataset201.mat
-            [file,path] = uigetfile();
-            if file == 0
-                delete(app); 
-            else
-                app.dataset_path = fullfile(path,file);
+
+            [file,path] = uigetfile('',...
+                          'Select below and pyramidal signals', ... 
+                          'MultiSelect', 'on');
             
-                table_name = 'grouped_oscil_table';
-                oscil_table_ = load(app.dataset_path, table_name);
-                app.oscil_table = oscil_table_.grouped_oscil_table;
+            if length(file) == 2
                 
-                waveforms_name = 'grouped_wave_forms';
-                waveforms_ = load(app.dataset_path, waveforms_name);
-                app.waveforms = waveforms_.grouped_wave_forms;
+                app.bel = importdata(fullfile(path, file{1}));
+                app.pyr = importdata(fullfile(path, file{2}));
+                app.len = min([length(app.bel) length(app.pyr)]);
+                app.bel = app.bel(1:app.len);
+                app.pyr = app.pyr(1:app.len);
+                app.x = (1:app.len)/app.fn;
                 
-                app.events_number = height(app.oscil_table);
-                app.EventsSlider.Limits = [1 app.events_number];
+                [c,d] = butter(3, [1/300 20/300]);
+                [e,f] = butter(3, [90/300 200/300]);
+                app.filt_bel = filtfilt(c,d, app.bel);
+                app.filt_pyr = filtfilt(e,f, app.pyr);
                 
-                app.SaveTruePositiveEventsButton.Enable = 'on';
-                app.SharpwaveCheckBox.Enable = 'on';
-                app.RippleCheckBox.Enable = 'on';
-                app.EventsSlider.Enable = 'on';
-                app.NextButton.Enable = 'on';
-                app.LastButton.Enable = 'on';
+                [file,path] = uigetfile('','Select detections');
                 
-                app.update()
+                if file ~= 0
+                    
+                    app.animal = strcat('_rat_', file(8:end-4));
+                
+                    filename = fullfile(path,file);
+                    
+                    variable = 'grouped_oscil_table';
+                    S = load(filename, variable);
+                    app.detections = S.(variable);
+                    
+                    app.detections_num = height(app.detections);
+                    app.EventsSlider.Limits = [1 app.detections_num];
+
+                    app.SaveButton.Enable = 'on';
+                    app.SharpwaveCheckBox.Enable = 'on';
+                    app.RippleCheckBox.Enable = 'on';
+                    app.EventsSlider.Enable = 'on';
+                    app.NextButton.Enable = 'on';
+                    app.LastButton.Enable = 'on';
+                    
+                    app.update()
+                    
+                else
+                    delete(app);
+                end
+            else
+                delete(app);
             end
         end
 
         % Button pushed function: NextButton
         function NextButtonPushed(app, event)
-            if app.EventsSlider.Value < app.events_number
+            if app.EventsSlider.Value < app.detections_num
                 app.EventsSlider.Value = app.EventsSlider.Value + 1;
                 app.update()
             end
@@ -141,6 +181,7 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             else
                 app.true_positive_ripples(app.true_positive_ripples == app.EventsSlider.Value) = [];
             end
+            app.update()
         end
 
         % Value changed function: SharpwaveCheckBox
@@ -151,17 +192,18 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             else
                 app.true_positive_sharpwaves(app.true_positive_sharpwaves == app.EventsSlider.Value) = [];
             end
+            app.update()
         end
 
-        % Button pushed function: SaveTruePositiveEventsButton
-        function SaveTruePositiveEventsButtonPushed(app, event)
-            [fPath, fName, fExt] = fileparts(app.dataset_path);
-            file = strcat(fName,'TruePositives',fExt);
-            path = fPath;
-            true_positives_file = fullfile(path,file);
-            ripples = app.true_positive_ripples;
-            sharpwaves = app.true_positive_sharpwaves;
-            save(true_positives_file,'ripples', 'sharpwaves');
+        % Button pushed function: SaveButton
+        function SaveButtonPushed(app, event)
+            %ripples = app.true_positive_ripples;
+            %sharpwaves = app.true_positive_sharpwaves;
+            vars = {'app.true_positive_ripples', ...
+                    'app.true_positive_sharpwaves'};
+            file = strcat('threshold_review_', ...
+                   erase(date,'-'), app.rat);
+            uisave(vars, file);
         end
     end
 
@@ -179,7 +221,7 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             % Create GridLayout
             app.GridLayout = uigridlayout(app.UIFigure);
             app.GridLayout.ColumnWidth = {'1x'};
-            app.GridLayout.RowHeight = {'2x', '1x'};
+            app.GridLayout.RowHeight = {'3x', '1x'};
 
             % Create UIAxes
             app.UIAxes = uiaxes(app.GridLayout);
@@ -196,11 +238,13 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             % Create GridLayout2
             app.GridLayout2 = uigridlayout(app.Panel);
             app.GridLayout2.ColumnWidth = {'1x'};
+            app.GridLayout2.RowHeight = {'1.5x', '1x'};
 
             % Create GridLayout3
             app.GridLayout3 = uigridlayout(app.GridLayout2);
             app.GridLayout3.ColumnWidth = {'1x', '8x', '1x'};
             app.GridLayout3.RowHeight = {'1x'};
+            app.GridLayout3.Padding = [0 0 0 0];
             app.GridLayout3.Layout.Row = 2;
             app.GridLayout3.Layout.Column = 1;
 
@@ -231,83 +275,128 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
 
             % Create GridLayout4
             app.GridLayout4 = uigridlayout(app.GridLayout2);
-            app.GridLayout4.ColumnWidth = {'1x', '1x', '1x'};
+            app.GridLayout4.ColumnWidth = {'1x', '1x', '1x', '1x', '1x'};
             app.GridLayout4.RowHeight = {'1x'};
+            app.GridLayout4.Padding = [0 0 0 0];
             app.GridLayout4.Layout.Row = 1;
             app.GridLayout4.Layout.Column = 1;
 
-            % Create GridLayout5
-            app.GridLayout5 = uigridlayout(app.GridLayout4);
-            app.GridLayout5.ColumnWidth = {'1x'};
-            app.GridLayout5.Padding = [0 0 0 0];
-            app.GridLayout5.Layout.Row = 1;
-            app.GridLayout5.Layout.Column = 1;
-
-            % Create TruePositiveRippleLabel
-            app.TruePositiveRippleLabel = uilabel(app.GridLayout5);
-            app.TruePositiveRippleLabel.HorizontalAlignment = 'center';
-            app.TruePositiveRippleLabel.VerticalAlignment = 'top';
-            app.TruePositiveRippleLabel.FontWeight = 'bold';
-            app.TruePositiveRippleLabel.Layout.Row = 2;
-            app.TruePositiveRippleLabel.Layout.Column = 1;
-            app.TruePositiveRippleLabel.Text = 'True Positive Ripple';
-
             % Create GridLayout7
-            app.GridLayout7 = uigridlayout(app.GridLayout5);
-            app.GridLayout7.ColumnWidth = {'1x', '1x', '1x', '1x', '1x', '1x', '1x'};
-            app.GridLayout7.RowHeight = {'1x'};
+            app.GridLayout7 = uigridlayout(app.GridLayout4);
+            app.GridLayout7.ColumnWidth = {'1x'};
             app.GridLayout7.Padding = [0 0 0 0];
             app.GridLayout7.Layout.Row = 1;
-            app.GridLayout7.Layout.Column = 1;
+            app.GridLayout7.Layout.Column = 5;
 
-            % Create RippleCheckBox
-            app.RippleCheckBox = uicheckbox(app.GridLayout7);
-            app.RippleCheckBox.ValueChangedFcn = createCallbackFcn(app, @RippleCheckBoxValueChanged, true);
-            app.RippleCheckBox.Enable = 'off';
-            app.RippleCheckBox.Text = '';
-            app.RippleCheckBox.Layout.Row = 1;
-            app.RippleCheckBox.Layout.Column = 4;
-
-            % Create GridLayout6
-            app.GridLayout6 = uigridlayout(app.GridLayout4);
-            app.GridLayout6.ColumnWidth = {'1x'};
-            app.GridLayout6.Padding = [0 0 0 0];
-            app.GridLayout6.Layout.Row = 1;
-            app.GridLayout6.Layout.Column = 3;
-
-            % Create TruePositiveSharpWaveLabel
-            app.TruePositiveSharpWaveLabel = uilabel(app.GridLayout6);
-            app.TruePositiveSharpWaveLabel.HorizontalAlignment = 'center';
-            app.TruePositiveSharpWaveLabel.VerticalAlignment = 'top';
-            app.TruePositiveSharpWaveLabel.FontWeight = 'bold';
-            app.TruePositiveSharpWaveLabel.Layout.Row = 2;
-            app.TruePositiveSharpWaveLabel.Layout.Column = 1;
-            app.TruePositiveSharpWaveLabel.Text = 'True Positive Sharp Wave';
+            % Create SWThresholdLabel
+            app.SWThresholdLabel = uilabel(app.GridLayout7);
+            app.SWThresholdLabel.HorizontalAlignment = 'center';
+            app.SWThresholdLabel.FontWeight = 'bold';
+            app.SWThresholdLabel.Layout.Row = 2;
+            app.SWThresholdLabel.Layout.Column = 1;
+            app.SWThresholdLabel.Text = 'SW Threshold';
 
             % Create GridLayout8
-            app.GridLayout8 = uigridlayout(app.GridLayout6);
-            app.GridLayout8.ColumnWidth = {'1x', '1x', '1x', '1x', '1x', '1x', '1x'};
-            app.GridLayout8.RowHeight = {'1x'};
+            app.GridLayout8 = uigridlayout(app.GridLayout4);
+            app.GridLayout8.ColumnWidth = {'1x'};
             app.GridLayout8.Padding = [0 0 0 0];
             app.GridLayout8.Layout.Row = 1;
-            app.GridLayout8.Layout.Column = 1;
+            app.GridLayout8.Layout.Column = 4;
+
+            % Create RSpinner
+            app.RSpinner = uispinner(app.GridLayout8);
+            app.RSpinner.Enable = 'off';
+            app.RSpinner.Layout.Row = 1;
+            app.RSpinner.Layout.Column = 1;
+
+            % Create RThresholdLabel
+            app.RThresholdLabel = uilabel(app.GridLayout8);
+            app.RThresholdLabel.HorizontalAlignment = 'center';
+            app.RThresholdLabel.FontWeight = 'bold';
+            app.RThresholdLabel.Layout.Row = 2;
+            app.RThresholdLabel.Layout.Column = 1;
+            app.RThresholdLabel.Text = 'R Threshold';
 
             % Create SharpwaveCheckBox
-            app.SharpwaveCheckBox = uicheckbox(app.GridLayout8);
+            app.SharpwaveCheckBox = uicheckbox(app.GridLayout4);
             app.SharpwaveCheckBox.ValueChangedFcn = createCallbackFcn(app, @SharpwaveCheckBoxValueChanged, true);
             app.SharpwaveCheckBox.Enable = 'off';
-            app.SharpwaveCheckBox.Text = '';
+            app.SharpwaveCheckBox.Text = 'TP SW';
+            app.SharpwaveCheckBox.FontWeight = 'bold';
             app.SharpwaveCheckBox.Layout.Row = 1;
-            app.SharpwaveCheckBox.Layout.Column = 4;
+            app.SharpwaveCheckBox.Layout.Column = 1;
 
-            % Create SaveTruePositiveEventsButton
-            app.SaveTruePositiveEventsButton = uibutton(app.GridLayout4, 'push');
-            app.SaveTruePositiveEventsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveTruePositiveEventsButtonPushed, true);
-            app.SaveTruePositiveEventsButton.WordWrap = 'on';
-            app.SaveTruePositiveEventsButton.Enable = 'off';
-            app.SaveTruePositiveEventsButton.Layout.Row = 1;
-            app.SaveTruePositiveEventsButton.Layout.Column = 2;
-            app.SaveTruePositiveEventsButton.Text = 'Save True Positive Events';
+            % Create RippleCheckBox
+            app.RippleCheckBox = uicheckbox(app.GridLayout4);
+            app.RippleCheckBox.ValueChangedFcn = createCallbackFcn(app, @RippleCheckBoxValueChanged, true);
+            app.RippleCheckBox.Enable = 'off';
+            app.RippleCheckBox.Text = 'TP R';
+            app.RippleCheckBox.FontWeight = 'bold';
+            app.RippleCheckBox.Layout.Row = 1;
+            app.RippleCheckBox.Layout.Column = 2;
+
+            % Create SaveButton
+            app.SaveButton = uibutton(app.GridLayout4, 'push');
+            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
+            app.SaveButton.WordWrap = 'on';
+            app.SaveButton.Enable = 'off';
+            app.SaveButton.Layout.Row = 1;
+            app.SaveButton.Layout.Column = 3;
+            app.SaveButton.Text = 'Save thresholds review';
+
+            % Create SaveButton
+            app.SaveButton = uibutton(app.GridLayout4, 'push');
+            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
+            app.SaveButton.WordWrap = 'on';
+            app.SaveButton.Enable = 'off';
+            app.SaveButton.Layout.Row = 1;
+            app.SaveButton.Layout.Column = 3;
+            app.SaveButton.Text = 'Save thresholds review';
+
+            % Create SaveButton
+            app.SaveButton = uibutton(app.GridLayout4, 'push');
+            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
+            app.SaveButton.WordWrap = 'on';
+            app.SaveButton.Enable = 'off';
+            app.SaveButton.Layout.Row = 1;
+            app.SaveButton.Layout.Column = 3;
+            app.SaveButton.Text = 'Save thresholds review';
+
+            % Create RippleCheckBox
+            app.RippleCheckBox = uicheckbox(app.GridLayout4);
+            app.RippleCheckBox.ValueChangedFcn = createCallbackFcn(app, @RippleCheckBoxValueChanged, true);
+            app.RippleCheckBox.Enable = 'off';
+            app.RippleCheckBox.Text = 'TP R';
+            app.RippleCheckBox.FontWeight = 'bold';
+            app.RippleCheckBox.Layout.Row = 1;
+            app.RippleCheckBox.Layout.Column = 2;
+
+            % Create RippleCheckBox
+            app.RippleCheckBox = uicheckbox(app.GridLayout4);
+            app.RippleCheckBox.ValueChangedFcn = createCallbackFcn(app, @RippleCheckBoxValueChanged, true);
+            app.RippleCheckBox.Enable = 'off';
+            app.RippleCheckBox.Text = 'TP R';
+            app.RippleCheckBox.FontWeight = 'bold';
+            app.RippleCheckBox.Layout.Row = 1;
+            app.RippleCheckBox.Layout.Column = 2;
+
+            % Create SharpwaveCheckBox
+            app.SharpwaveCheckBox = uicheckbox(app.GridLayout4);
+            app.SharpwaveCheckBox.ValueChangedFcn = createCallbackFcn(app, @SharpwaveCheckBoxValueChanged, true);
+            app.SharpwaveCheckBox.Enable = 'off';
+            app.SharpwaveCheckBox.Text = 'TP SW';
+            app.SharpwaveCheckBox.FontWeight = 'bold';
+            app.SharpwaveCheckBox.Layout.Row = 1;
+            app.SharpwaveCheckBox.Layout.Column = 1;
+
+            % Create SharpwaveCheckBox
+            app.SharpwaveCheckBox = uicheckbox(app.GridLayout4);
+            app.SharpwaveCheckBox.ValueChangedFcn = createCallbackFcn(app, @SharpwaveCheckBoxValueChanged, true);
+            app.SharpwaveCheckBox.Enable = 'off';
+            app.SharpwaveCheckBox.Text = 'TP SW';
+            app.SharpwaveCheckBox.FontWeight = 'bold';
+            app.SharpwaveCheckBox.Layout.Row = 1;
+            app.SharpwaveCheckBox.Layout.Column = 1;
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
