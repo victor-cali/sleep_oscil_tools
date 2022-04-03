@@ -10,11 +10,11 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
         RippleCheckBox     matlab.ui.control.CheckBox
         SharpwaveCheckBox  matlab.ui.control.CheckBox
         GridLayout8        matlab.ui.container.GridLayout
-        RThresholdLabel    matlab.ui.control.Label
         RSpinner           matlab.ui.control.Spinner
+        RThresholdLabel    matlab.ui.control.Label
         GridLayout7        matlab.ui.container.GridLayout
-        SWThresholdLabel   matlab.ui.control.Label
         SWSpinner          matlab.ui.control.Spinner
+        SWThresholdLabel   matlab.ui.control.Label
         GridLayout         matlab.ui.container.GridLayout
         GridLayout3        matlab.ui.container.GridLayout
         EventsSlider       matlab.ui.control.Slider
@@ -34,6 +34,8 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
         filt_pyr;
         fn = 600;
         detections;
+        r_threshold;
+        sw_threshold;
         window = 3601;
         detections_num;
         true_positive_ripples = [];
@@ -67,8 +69,10 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             pyr_sig = app.pyr + space;
             space = max(pyr_sig(det_s:det_e)) - min(bel_sig(det_s:det_e));
             filt_bel_sig = app.filt_bel + space;
+            sw_thres = app.sw_threshold + space;
             space = max(filt_bel_sig(det_s:det_e)) - min(bel_sig(det_s:det_e));
-            filt_pyr_sig = 5.*app.filt_pyr + space; 
+            filt_pyr_sig = 5.*app.filt_pyr + space;
+            r_thes = 5*app.r_threshold + space;
             
             y_max = max(filt_pyr_sig(det_s:det_e)) + 250;
             y_min = min(bel_sig(det_s:det_e)) - 250;
@@ -82,6 +86,11 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             plot(app.UIAxes, app.x, pyr_sig, 'Color', 'blue')
             hold(app.UIAxes,'on')
             plot(app.UIAxes, app.x, bel_sig, 'Color', 'black')
+            
+            hold(app.UIAxes,'on')
+            yline(app.UIAxes, r_thes)
+            hold(app.UIAxes,'on')
+            yline(app.UIAxes, sw_thres)
             
             app.UIAxes.YLim = [y_min y_max];
             app.UIAxes.XLim = [det_s/app.fn, det_e/app.fn];
@@ -118,6 +127,11 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
                 app.filt_bel = filtfilt(c,d, app.bel);
                 app.filt_pyr = filtfilt(e,f, app.pyr);
                 
+                app.sw_threshold = mean(app.filt_bel) - 5 * std(app.filt_bel);
+                app.r_threshold = mean(app.filt_pyr) + 5 * std(app.filt_pyr);
+                app.SWSpinner.Value = app.sw_threshold;
+                app.RSpinner.Value = app.r_threshold;
+                
                 [file,path] = uigetfile('','Select detections');
                 
                 if file ~= 0
@@ -133,12 +147,14 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
                     app.detections_num = height(app.detections);
                     app.EventsSlider.Limits = [1 app.detections_num];
 
-                    app.SaveButton.Enable = 'on';
                     app.SharpwaveCheckBox.Enable = 'on';
                     app.RippleCheckBox.Enable = 'on';
                     app.EventsSlider.Enable = 'on';
+                    app.SaveButton.Enable = 'on';
                     app.NextButton.Enable = 'on';
                     app.LastButton.Enable = 'on';
+                    app.SWSpinner.Enable = 'on';
+                    app.RSpinner.Enable = 'on';
                     
                     app.update()
                     
@@ -204,6 +220,20 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             file = strcat('threshold_review_', ...
                    erase(date,'-'), app.rat);
             uisave(vars, file);
+        end
+
+        % Value changed function: RSpinner
+        function RSpinnerValueChanged(app, event)
+            value = app.RSpinner.Value;
+            app.r_threshold = value;
+            app.update()
+        end
+
+        % Value changed function: SWSpinner
+        function SWSpinnerValueChanged(app, event)
+            value = app.SWSpinner.Value;
+            app.sw_threshold = value;
+            app.update()
         end
     end
 
@@ -296,18 +326,19 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             app.SWThresholdLabel.Layout.Column = 1;
             app.SWThresholdLabel.Text = 'SW Threshold';
 
+            % Create SWSpinner
+            app.SWSpinner = uispinner(app.GridLayout7);
+            app.SWSpinner.ValueChangedFcn = createCallbackFcn(app, @SWSpinnerValueChanged, true);
+            app.SWSpinner.Enable = 'off';
+            app.SWSpinner.Layout.Row = 1;
+            app.SWSpinner.Layout.Column = 1;
+
             % Create GridLayout8
             app.GridLayout8 = uigridlayout(app.GridLayout4);
             app.GridLayout8.ColumnWidth = {'1x'};
             app.GridLayout8.Padding = [0 0 0 0];
             app.GridLayout8.Layout.Row = 1;
             app.GridLayout8.Layout.Column = 4;
-
-            % Create RSpinner
-            app.RSpinner = uispinner(app.GridLayout8);
-            app.RSpinner.Enable = 'off';
-            app.RSpinner.Layout.Row = 1;
-            app.RSpinner.Layout.Column = 1;
 
             % Create RThresholdLabel
             app.RThresholdLabel = uilabel(app.GridLayout8);
@@ -316,6 +347,13 @@ classdef ThresholdReviewer_exported < matlab.apps.AppBase
             app.RThresholdLabel.Layout.Row = 2;
             app.RThresholdLabel.Layout.Column = 1;
             app.RThresholdLabel.Text = 'R Threshold';
+
+            % Create RSpinner
+            app.RSpinner = uispinner(app.GridLayout8);
+            app.RSpinner.ValueChangedFcn = createCallbackFcn(app, @RSpinnerValueChanged, true);
+            app.RSpinner.Enable = 'off';
+            app.RSpinner.Layout.Row = 1;
+            app.RSpinner.Layout.Column = 1;
 
             % Create SharpwaveCheckBox
             app.SharpwaveCheckBox = uicheckbox(app.GridLayout4);
