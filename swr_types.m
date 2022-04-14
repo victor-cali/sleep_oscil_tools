@@ -5,14 +5,16 @@
 clear
 % SET THE ANIMAL NUMBER HERE
 % __________
-animal = "10";
-batch = "1";
+animal = "203";
+batch = "2";
 % ----------
 
 source_path = "D:\Dev\MATLAB\GenzelLab\";
 
-results_path = source_path + "results_sleep_oscil_tools\";
-%mkdir(results_path);
+results_folder = source_path + "sleep_oscil_tools\results\";
+if ~exist(results_folder, 'dir')
+    mkdir(results_folder)
+end
 
 % Sleep Oscilations Tools (self)
 addpath(source_path + "sleep_oscil_tools");
@@ -47,8 +49,8 @@ patSleepStates = data_path + "PCA_state_files\PCA_Scorer_batch_" + batch + "\Rat
 patIDhpc2031 = data_path + "HPC_all_animals\HPC_" + animal + "_CHpyr.continuous.mat";   %pyramidal layer
 patIDhpc2032 = data_path + "HPC_all_animals\HPC_" + animal + "_CHab.continuous.mat";    %above pyramidal layer
 patIDhpc2033 = data_path + "HPC_all_animals\HPC_" + animal + "_CHbel.continuous.mat";   %below pyramidal layer
-patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH8.continuous.mat";     %channel 5 in depth
-patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH20.continuous.mat";    %channel 5 from end
+patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH7.continuous.mat";     %channel 5 in depth
+patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH19.continuous.mat";    %channel 5 from end
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
@@ -145,10 +147,11 @@ PFC203(outliers,:) = mean(median(PFC203));
 % For the detection of SW (sharp waves) we use the BPL (Below Pyramidal Layer) of the HPC
 
 %Band pass filter to better see the sharp waves
-[c,d] = butter(3, [1/300 20/300]);
+[c,d] = butter(3, [2/300 20/300]);
 filtbpl = filtfilt(c,d,HPC203(:,3));
 % Detect sharp waves as signal lower than ?-5*SD
-spw = double(filtbpl <= mean(filtbpl)-5*std(filtbpl));
+sw_thres = 5.6;
+spw = double(filtbpl <= mean(filtbpl)-sw_thres*std(filtbpl));
 % Use absolute derivative for practical purposes: every sharp wave will hence start and end with a 1
 dspw = abs(diff(spw));
 % Get array of indices for starts and ends of sharp-waves
@@ -205,8 +208,8 @@ sw_spe = [sw_event_lims(:,1) peaks sw_event_lims(:,2)];
 ripplespyr = filtfilt(e,f,HPC203(:,1));
 
 yourtimevector = (1:length(ripplespyr))/600;
-
-thresh = mean(ripplespyr) + 5*std(ripplespyr); %threshold for ripple detection
+r_thres = 5;
+thresh = mean(ripplespyr) + r_thres*std(ripplespyr); %threshold for ripple detection
 [S, E, M] = findRipplesLisa(ripplespyr', yourtimevector, thresh, (thresh)*(1/2), 600 ); %Adrian's detection
 r_spe = [S'*fn, M'*fn, E'*fn];
 r_num = length(M);
@@ -546,8 +549,8 @@ linkaxes([tt1 tt2 tt3 tt4 tt5], 'x')
 %savefig(visualization_path);
 
 %% Save everything
-dataset_path = fullfile(results_path,"dataset" + animal + ".mat");
-%save(dataset_path, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
+dataset_filename = fullfile(results_folder,"dataset" + animal + ".mat");
+save(dataset_filename, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
 
 %%
 % We have the start/end time of each ripple, we create one long logical
