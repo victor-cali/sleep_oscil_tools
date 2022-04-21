@@ -8,8 +8,8 @@ clc
 
 % SET THE ANIMAL NUMBER HERE
 % __________
-animal = "209";
-batch = "2";
+animal = "2";
+batch = "1";
 % ----------
 
 source_path = uigetdir('','Source Path');
@@ -35,9 +35,9 @@ abov_path = fullfile(data_path, "HPC_all_animals", ...
 belo_path = fullfile(data_path, "HPC_all_animals", ...
                 "HPC_" + animal + "_CHbel.continuous.mat");
 shal_path = fullfile(data_path, "PFC_all_animals", ...
-                "PFC_" + animal + "_CH7.continuous.mat");
+                "PFC_" + animal + "_CH37.continuous.mat");
 deep_path = fullfile(data_path, "PFC_all_animals", ...
-                "PFC_" + animal + "_CH19.continuous.mat");
+                "PFC_" + animal + "_CH60.continuous.mat");
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
@@ -72,12 +72,11 @@ deep = deep(1:L);
 TOT = abs(pyra) + abs(abov) + abs(belo) + abs(shal)+ abs(deep);
 
 %figure
-threshold = 4500;
-plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), TOT)
-yline(threshold, '-', "Threshold:" + int2str(threshold))
-title("Channels Amplitudes Sum: Rat " + animal)
-%%
-% Artifacts
+%threshold = 4500;
+%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), TOT)
+%yline(threshold, '-', "Threshold:" + int2str(threshold))
+%title("Channels Amplitudes Sum: Rat " + animal)
+%% Artifacts
 tr = 5670; %Visual threshold 
 outliers = false(L,1);
 index = 1;
@@ -94,18 +93,19 @@ while index<L
 end
 
 %Filter out artifacts & replace with the mean of the channels' medians
-%hpc_mean = mean(median([pyra, abov, belo]));
-%pfc_mean = mean(median([shal, deep]));
+hpc_mean = mean(median([pyra, abov, belo]));
+pfc_mean = mean(median([shal, deep]));
 
-%pyra(outliers,:) = hpc_mean;
-%abov(outliers,:) = hpc_mean;
-%belo(outliers,:) = hpc_mean;
-%shal(outliers,:) = pfc_mean;
-%deep(outliers,:) = pfc_mean;
+pyra(outliers,:) = hpc_mean;
+abov(outliers,:) = hpc_mean;
+belo(outliers,:) = hpc_mean;
+shal(outliers,:) = pfc_mean;
+deep(outliers,:) = pfc_mean;
+
 
 %% Save stuff
 
-%result_file = fullfile(results_folder, "HPC_"+animal+"_bel_clean.continuous.mat");
-%save(result_file, 'belo')
-%result_file = fullfile(results_folder, "HPC_"+animal+"_pyr_clean.continuous.mat");
-%save(result_file, 'pyra')
+result_file = fullfile(results_folder, "HPC_"+animal+"_bel_clean.continuous.mat");
+save(result_file, 'belo')
+result_file = fullfile(results_folder, "HPC_"+animal+"_pyr_clean.continuous.mat");
+save(result_file, 'pyra')

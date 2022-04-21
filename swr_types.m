@@ -1,113 +1,87 @@
 %% ||||| SWRS TYPES |||||
-
-% Script designed to run the analysis of SWRs
-% Load various folders with relevants functions afterward
+% Script designed to run the analysis of Ripples, Sharp Waves and Sharp
+% wave ripples
 clear
-% SET THE ANIMAL NUMBER HERE
+clc
+
+% SET THE ANIMAL NUMBER HERE2220
 % __________
-animal = "203";
+animal = "214";
 batch = "2";
+artifact_threshold = 4500;
+ripple_threshold = 5;
+sharpwave_threshold = 3.5;
 % ----------
 
-source_path = "D:\Dev\MATLAB\GenzelLab\";
+source_path = 'D:\Dev\MATLAB\GenzelLab'; %uigetdir('','Source Path');
 
-results_folder = source_path + "sleep_oscil_tools\results\";
+% Sleep Oscilations Tools (self)
+addpath(fullfile(source_path, "sleep_oscil_tools"));
+
+%CorticoHippocampal
+addpath(genpath(fullfile(source_path, "CorticoHippocampal")))
+
+results_folder = fullfile(source_path, "sleep_oscil_tools", "results", "detections");
 if ~exist(results_folder, 'dir')
     mkdir(results_folder)
 end
 
-% Sleep Oscilations Tools (self)
-addpath(source_path + "sleep_oscil_tools");
-
-%Fieldtrip
-addpath(source_path + "fieldtrip");
-
-%CorticoHippocampal
-addpath(genpath(source_path + "CorticoHippocampal"))
-
-%CBD
-addpath(source_path + "CBD");
-
-%ADRITOOLS
-addpath(genpath(source_path + "ADRITOOLS"))
-
-% Additionnal package
-addpath(source_path + "analysis-tools");
-
-%Chronux
-addpath(genpath(source_path + "chronux"));
-
-%GL_fast_slow_hfos
-addpath(genpath(source_path + "GL_fast_slow_hfos"))
-
-%% Rat N - vehicle
-
-data_path = source_path + "data\";
+% Rat N - vehicle
+data_path = fullfile(source_path, "data");
 
 %Paths
-patSleepStates = data_path + "PCA_state_files\PCA_Scorer_batch_" + batch + "\Rat" + animal + "\states.mat";   %pyramidal layer 
-patIDhpc2031 = data_path + "HPC_all_animals\HPC_" + animal + "_CHpyr.continuous.mat";   %pyramidal layer
-patIDhpc2032 = data_path + "HPC_all_animals\HPC_" + animal + "_CHab.continuous.mat";    %above pyramidal layer
-patIDhpc2033 = data_path + "HPC_all_animals\HPC_" + animal + "_CHbel.continuous.mat";   %below pyramidal layer
-patIDpfc2031 = data_path + "PFC_all_animals\PFC_" + animal + "_CH7.continuous.mat";     %channel 5 in depth
-patIDpfc2032 = data_path + "PFC_all_animals\PFC_" + animal + "_CH19.continuous.mat";    %channel 5 from end
+sleep_states_path = fullfile(data_path, "PCA_state_files", ...
+                          "PCA_Scorer_batch_" + batch, ...
+                          "Rat" + animal, "states.mat" );
+pyra_path = fullfile(data_path, "HPC_all_animals", ...
+                "HPC_" + animal + "_CHpyr.continuous.mat");
+abov_path = fullfile(data_path, "HPC_all_animals", ...
+                "HPC_" + animal + "_CHab.continuous.mat");
+belo_path = fullfile(data_path, "HPC_all_animals", ...
+                "HPC_" + animal + "_CHbel.continuous.mat");
+shal_path = fullfile(data_path, "PFC_all_animals", ...
+                "PFC_" + animal + "_CH7.continuous.mat");
+deep_path = fullfile(data_path, "PFC_all_animals", ...
+                "PFC_" + animal + "_CH19.continuous.mat");
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
 fn = 600;   %downsampling freq
 
-% Design of low pass filter (we low pass to 300Hz)
-%Wn = [ds_fhz/acq_fhz ]; % Cutoff=fs_new/2 Hz. 
-%[b,a] = butter(3,Wn); %Filter coefficients for LPF.
-
 % Sleep states across the signal
-clusters = importdata(patSleepStates);
+clusters = importdata(sleep_states_path);
 sleep_states = zeros(1, length(clusters)*fn*10);
 for i = 1:length(clusters)
     state = repmat(clusters(i),1,6000);
     pos = 6000*i-5999;
     sleep_states(pos:pos+5999) = state;
 end
+L = length(sleep_states);
 
-% Load, filter and store data 
+% Load data 
+pyra = importdata(pyra_path);
+abov = importdata(abov_path);
+belo = importdata(belo_path);
+shal = importdata(shal_path);
+deep = importdata(deep_path);
 
-pathsHPC203 = {patIDhpc2031, patIDhpc2032, patIDhpc2033};
-HPC203 = cell(1,length(pathsHPC203));
-for ii = 1:length(pathsHPC203)
-    HPC203{ii} = importdata(pathsHPC203{ii});
-end
-sz = min(cellfun(@length, HPC203));
-for ii = 1:length(pathsHPC203)
-    HPC203{ii} = HPC203{ii}(1:sz);
-end
-HPC203 = cell2mat(HPC203);
-HPC203 = HPC203(1:length(sleep_states),:);
+% Crop data to the same length
+pyra = pyra(1:L);
+abov = abov(1:L);
+belo = belo(1:L);
+shal = shal(1:L);
+deep = deep(1:L);
 
-pathsPFC203 = {patIDpfc2031, patIDpfc2032};
-PFC203 = cell(1,length(pathsPFC203));
-for ii = 1:length(pathsPFC203)
-    PFC203{ii} = importdata(pathsPFC203{ii});
-end
-sz = min(cellfun(@length, PFC203));
-for ii = 1:length(pathsPFC203)
-    PFC203{ii} = PFC203{ii}(1:sz);
-end
-PFC203 = cell2mat(PFC203);
-PFC203 = PFC203(1:length(sleep_states),:);
-
-TOT = abs(HPC203(:,2)) + abs(HPC203(:,1)) + abs(HPC203(:,3)) + abs(PFC203(:,1))+ abs(PFC203(:,2)); % Sum of amplitudes ==> To visually assess artifacts, as they will appear in every channel and add up
-
-L = length(HPC203(:,1));
-
-%figure
-%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), TOT)
+% Sum of amplitudes to visually assess artifacts as they will appear in
+% every channel and add up
+TOT = abs(pyra) + abs(abov) + abs(belo) + abs(shal)+ abs(deep);
 
 % Artifacts
-tr = 5670; %Visual threshold 
+artifact_thres = artifact_threshold; %Visual threshold 
 outliers = false(L,1);
 index = 1;
 while index<L
-    if TOT(index)>=tr
+    if TOT(index) >= artifact_thres
         if index-300 < 1; lo_lim = 1; else; lo_lim = index-300; end
         if index+1999 > L; hi_lim = L; else; hi_lim = index+1999; end
         sz = length(lo_lim:hi_lim);
@@ -119,38 +93,19 @@ while index<L
 end
 
 %Filter out artifacts & replace with the mean of the channels' medians
-
-HPC203(outliers,:) = mean(median(HPC203)); 
-PFC203(outliers,:) = mean(median(PFC203));
-
-% Display all prefiltered signals
-%figure
-%tiledlayout(5,1)
-%tt1 = nexttile;
-%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,2))
-%title('HPC - above pyramidal layer')
-%tt2 = nexttile;
-%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,1))
-%title('HPC - pyramidal layer')
-%tt3 = nexttile;
-%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), HPC203(:,3))
-%title('HPC - below pyramidal layer')
-%tt4 = nexttile;
-%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,1))
-%title('PFC - shallow layer')
-%tt5 = nexttile;
-%plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), PFC203(:,2))
-%title('PFC - deep layer')
-%linkaxes([tt1 tt2 tt3 tt4 tt5], 'x', 'y')
+hpc_mean = mean(median([pyra, abov, belo]));
+pfc_mean = mean(median([shal, deep]));
 
 %% Sharp waves detection
 % For the detection of SW (sharp waves) we use the BPL (Below Pyramidal Layer) of the HPC
 
 %Band pass filter to better see the sharp waves
 [c,d] = butter(3, [2/300 20/300]);
-filtbpl = filtfilt(c,d,HPC203(:,3));
+filtbpl = filtfilt(c, d, belo);
+%Remove artifacts for detection
+filtbpl(outliers) = hpc_mean;
 % Detect sharp waves as signal lower than ?-5*SD
-sw_thres = 5.6;
+sw_thres = sharpwave_threshold;
 spw = double(filtbpl <= mean(filtbpl)-sw_thres*std(filtbpl));
 % Use absolute derivative for practical purposes: every sharp wave will hence start and end with a 1
 dspw = abs(diff(spw));
@@ -163,7 +118,7 @@ sw_num = length(sw_event_marks)/2;
 peaks = zeros(sw_num,1);
 for i = 1 : sw_num
     sw_lim = sw_event_lims(i,:);
-    [~,I] = min(HPC203(sw_lim(1):sw_lim(2),3));
+    [~,I] = min(belo(sw_lim(1):sw_lim(2)));
     peaks(i) = sw_lim(1) + I -1;
 end
 % Get sharp-wave indexes for start, peak, end (spe)
@@ -205,10 +160,11 @@ sw_spe = [sw_event_lims(:,1) peaks sw_event_lims(:,2)];
 %For ripple detection, we use the pyramidal layer of the HPC
 %First we bandpass for ripple frequency range
 [e,f] = butter(3, [90/300 200/300]);
-ripplespyr = filtfilt(e,f,HPC203(:,1));
-
+ripplespyr = filtfilt(e,f,pyra);
+%Remove artifacts for detection
+ripplespyr(outliers) = hpc_mean;
 yourtimevector = (1:length(ripplespyr))/600;
-r_thres = 5;
+r_thres = ripple_threshold;
 thresh = mean(ripplespyr) + r_thres*std(ripplespyr); %threshold for ripple detection
 [S, E, M] = findRipplesLisa(ripplespyr', yourtimevector, thresh, (thresh)*(1/2), 600 ); %Adrian's detection
 r_spe = [S'*fn, M'*fn, E'*fn];
@@ -291,19 +247,19 @@ for i = 1: height(oscil_table)
     if peak-1800 < 1
         lolim = 1;
         hilim = 3600;
-    elseif peak+1800 > length(HPC203)
-        lolim = length(HPC203)-3600; 
-        hilim = length(HPC203);
+    elseif peak+1800 > L
+        lolim = L-3600; 
+        hilim = L;
     else
         lolim = peak-1800; 
         hilim = peak+1800;
     end
     window = fix([lolim, hilim]);
-    wave_forms.HPCpyra(:,i) = HPC203(window(1) : window(2), 1);
-    wave_forms.HPCabov(:,i) = HPC203(window(1) : window(2), 2);
-    wave_forms.HPCbelo(:,i) = HPC203(window(1) : window(2), 3);
-    wave_forms.PFCshal(:,i) = PFC203(window(1) : window(2), 1);
-    wave_forms.PFCdeep(:,i) = PFC203(window(1) : window(2), 2);
+    wave_forms.HPCpyra(:,i) = pyra(window(1) : window(2));
+    wave_forms.HPCabov(:,i) = abov(window(1) : window(2));
+    wave_forms.HPCbelo(:,i) = belo(window(1) : window(2));
+    wave_forms.PFCshal(:,i) = shal(window(1) : window(2));
+    wave_forms.PFCdeep(:,i) = deep(window(1) : window(2));
 end
 
 %% Grouped table
@@ -370,19 +326,19 @@ for i = 1: height(grouped_oscil_table)
     if peak-1800 < 1
         lolim = 1;
         hilim = 3600;
-    elseif peak+1800 > length(HPC203)
-        lolim = length(HPC203)-3600; 
-        hilim = length(HPC203);
+    elseif peak+1800 > L
+        lolim = L-3600; 
+        hilim = L;
     else
         lolim = peak-1800; 
         hilim = peak+1800;
     end
     window = fix([lolim, hilim]);
-    grouped_wave_forms.HPCpyra(:,i) = HPC203(window(1) : window(2), 1);
-    grouped_wave_forms.HPCabov(:,i) = HPC203(window(1) : window(2), 2);
-    grouped_wave_forms.HPCbelo(:,i) = HPC203(window(1) : window(2), 3);
-    grouped_wave_forms.PFCshal(:,i) = PFC203(window(1) : window(2), 1);
-    grouped_wave_forms.PFCdeep(:,i) = PFC203(window(1) : window(2), 2);
+    grouped_wave_forms.HPCpyra(:,i) = pyra(window(1) : window(2));
+    grouped_wave_forms.HPCabov(:,i) = abov(window(1) : window(2));
+    grouped_wave_forms.HPCbelo(:,i) = belo(window(1) : window(2));
+    grouped_wave_forms.PFCshal(:,i) = shal(window(1) : window(2));
+    grouped_wave_forms.PFCdeep(:,i) = deep(window(1) : window(2));
 end
 
 %% Visualization of events
@@ -449,7 +405,7 @@ tiledlayout(5,1)
 increment = 3;
 
 tt1 = nexttile;
-sig = increment.*HPC203(:,2);
+sig = increment.*abov;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - above pyramidal layer')
 minsig = min(sig);
@@ -465,7 +421,7 @@ hold on
 plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
 
 tt2 = nexttile;
-sig = increment.*HPC203(:,1);
+sig = increment.*pyra;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - pyramidal layer')
 hold on
@@ -489,7 +445,7 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 
 tt3 = nexttile;
-sig = increment.*HPC203(:,3);
+sig = increment.*belo;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('HPC - below pyramidal layer')
 hold on
@@ -512,7 +468,7 @@ hold on
 plot(M_dur_sw_swr, (maxsig+1850)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'LineWidth', 12)
 
 tt4 = nexttile;
-sig = increment.*PFC203(:,1);
+sig = increment.*shal;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - shallow layer')
 hold on
@@ -530,7 +486,7 @@ plot(M_dur_sw_swr, (maxsig+750)*ones(size(M_dur_sw_swr)), 'color', [1, 0, 0], 'L
 
 
 tt5 = nexttile;
-sig = increment.*PFC203(:,2);
+sig = increment.*deep;
 plot(linspace(duration([0 0 0]),duration([0 0 L/600]),L), sig, 'color', [0.3010, 0.7450, 0.9330])
 title('PFC - deep layer')
 hold on
@@ -549,7 +505,7 @@ linkaxes([tt1 tt2 tt3 tt4 tt5], 'x')
 %savefig(visualization_path);
 
 %% Save everything
-dataset_filename = fullfile(results_folder,"dataset" + animal + ".mat");
+dataset_filename = fullfile(results_folder,"detections" + animal + ".mat");
 save(dataset_filename, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
 
 %%
