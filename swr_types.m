@@ -6,11 +6,11 @@ clc
 
 % SET THE ANIMAL NUMBER HERE2220
 % __________
-animal = "214";
-batch = "2";
-artifact_threshold = 4500;
-ripple_threshold = 5;
-sharpwave_threshold = 3.5;
+animal = "2";
+batch = "1";
+artifact_threshold = 3450;
+ripple_threshold = 4.6;
+sharpwave_threshold = 3.7;
 % ----------
 
 source_path = 'D:\Dev\MATLAB\GenzelLab'; %uigetdir('','Source Path');
@@ -40,9 +40,9 @@ abov_path = fullfile(data_path, "HPC_all_animals", ...
 belo_path = fullfile(data_path, "HPC_all_animals", ...
                 "HPC_" + animal + "_CHbel.continuous.mat");
 shal_path = fullfile(data_path, "PFC_all_animals", ...
-                "PFC_" + animal + "_CH7.continuous.mat");
+                "PFC_" + animal + "_CH37.continuous.mat");
 deep_path = fullfile(data_path, "PFC_all_animals", ...
-                "PFC_" + animal + "_CH19.continuous.mat");
+                "PFC_" + animal + "_CH60.continuous.mat");
 
 % Acquisition parameters
 %acq_fhz = 30e3; %acquisition freq
@@ -505,8 +505,8 @@ linkaxes([tt1 tt2 tt3 tt4 tt5], 'x')
 %savefig(visualization_path);
 
 %% Save everything
-dataset_filename = fullfile(results_folder,"detections" + animal + ".mat");
-save(dataset_filename, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
+%dataset_filename = fullfile(results_folder,"detections" + animal + ".mat");
+%save(dataset_filename, 'oscil_table', 'wave_forms', 'grouped_oscil_table', 'grouped_wave_forms')
 
 %%
 % We have the start/end time of each ripple, we create one long logical
